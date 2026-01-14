@@ -1,0 +1,29 @@
+[Unit]
+Description=Minecraft Server (1.21.11)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=caavere
+Group=caavere
+WorkingDirectory=/home/caavere/Projects/minecraft
+
+# Start: create tmux session and run server
+ExecStart=/usr/bin/tmux new-session -d -s minecraft /home/caavere/Projects/minecraft/start.sh
+
+# Stop: send 'stop' command to console for graceful shutdown
+ExecStop=/usr/bin/tmux send-keys -t minecraft 'stop' Enter
+
+# Timeout for graceful shutdown (world save can take time)
+TimeoutStopSec=60
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Process detection
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

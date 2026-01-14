@@ -1,0 +1,44 @@
+# Minecraft Server Files
+server.jar
+*.jar
+
+# World data
+world/
+world_nether/
+world_the_end/
+
+# Libraries and versions
+libraries/
+versions/
+
+# Logs
+logs/
+*.log
+nohup.out
+
+# Player and server state
+usercache.json
+banned-ips.json
+banned-players.json
+ops.json
+whitelist.json
+
+# Session lock
+*.lock
+session.lock
+
+# Backups
+*.tar.gz
+*.zip
+backups/
+
+# Crash reports
+crash-reports/
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+.vscode/
