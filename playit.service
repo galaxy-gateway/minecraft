@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 User=caavere
 WorkingDirectory=/home/caavere/Projects/minecraft
-ExecStart=/home/caavere/Projects/minecraft/playit
+ExecStart=/home/caavere/Projects/minecraft/playit --stdout
 Restart=always
 RestartSec=10
 

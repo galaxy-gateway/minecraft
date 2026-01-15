@@ -5,7 +5,7 @@
 
 .PHONY: help start stop restart status \
         server-start server-stop server-restart server-status \
-        playit-start playit-stop playit-restart playit-status \
+        playit-start playit-stop playit-restart playit-status playit-logs \
         backup logs console \
         install uninstall server-install server-uninstall playit-install playit-uninstall \
         playit-download fabric-download fabric-install
@@ -51,6 +51,7 @@ help:
 	@echo "  playit-stop     - Stop playit tunnel only"
 	@echo "  playit-restart  - Restart playit tunnel only"
 	@echo "  playit-status   - Show playit tunnel status"
+	@echo "  playit-logs     - Tail playit tunnel logs"
 	@echo ""
 	@echo "Setup:"
 	@echo "  install         - Install all systemd services"
@@ -145,6 +146,9 @@ playit-status:
 	@echo "=== Playit Tunnel ==="
 	@printf "  Service:  "; systemctl is-active $(PLAYIT_SERVICE) 2>/dev/null || echo "inactive"
 	@printf "  Address:  "; systemctl is-active --quiet $(PLAYIT_SERVICE) && echo "starbase.minecraft.party" || echo "n/a"
+
+playit-logs:
+	@journalctl -u $(PLAYIT_SERVICE) -f
 
 #===============================================================================
 # INSTALLATION
