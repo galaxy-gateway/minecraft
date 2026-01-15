@@ -1,0 +1,17 @@
+[Unit]
+Description=playit.gg Tunnel for Minecraft
+After=network-online.target
+Wants=network-online.target
+PartOf=minecraft.service
+After=minecraft.service
+
+[Service]
+Type=simple
+User=caavere
+WorkingDirectory=/home/caavere/Projects/minecraft
+ExecStart=/home/caavere/Projects/minecraft/playit
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=minecraft.service
