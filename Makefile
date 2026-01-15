@@ -194,7 +194,7 @@ playit-uninstall:
 
 playit-download:
 	@echo "Downloading playit.gg..."
-	@curl -SsL https://playit.gg/downloads/playit-linux-amd64 -o $(PLAYIT_BIN)
+	@curl -SsL -L https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64 -o $(PLAYIT_BIN)
 	@chmod +x $(PLAYIT_BIN)
 	@echo "Downloaded to $(PLAYIT_BIN)"
 	@echo "Run './playit' to configure your tunnel, then 'make playit-install'."
