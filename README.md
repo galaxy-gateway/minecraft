@@ -18,31 +18,42 @@ make console   # Attach to server console
 
 Fabric is a lightweight mod loader for Minecraft that allows you to run server-side mods.
 
-### 1. Download the Fabric Installer
+### 1. Install Fabric Server
+
+The easiest way to install Fabric:
 
 ```bash
-wget https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.1.1/fabric-installer-1.1.1.jar
+make fabric-install
 ```
 
-### 2. Install Fabric Server
+This downloads the Fabric installer and sets up Fabric for Minecraft 1.21.11.
 
-Run the installer to set up Fabric for your Minecraft version:
+### Manual Installation
+
+If you prefer manual control:
 
 ```bash
-java -jar fabric-installer-1.1.1.jar server -mcversion 1.21.1 -downloadMinecraft
+# Download installer
+make fabric-download
+# Or: wget https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.1.1/fabric-installer-1.1.1.jar
+
+# Install Fabric server
+java -jar fabric-installer-1.1.1.jar server -mcversion 1.21.11 -downloadMinecraft
+
+# View all options
+java -jar fabric-installer-1.1.1.jar help
 ```
 
-This will:
-- Download the Fabric server launcher (`fabric-server-launch.jar`)
-- Download required Fabric libraries to the `libraries/` directory
-- Create `server.jar` pointing to the Fabric launcher
+**Installer options:**
+| Option | Description |
+|--------|-------------|
+| `-mcversion <version>` | Minecraft version (default: latest) |
+| `-loader <version>` | Fabric loader version (default: latest) |
+| `-downloadMinecraft` | Auto-download vanilla server jar |
+| `-dir <path>` | Install directory (default: current) |
+| `-snapshot` | Enable snapshot versions |
 
-**Options:**
-- `-mcversion <version>` - Specify Minecraft version (e.g., `1.21.1`, `1.20.4`)
-- `-downloadMinecraft` - Automatically download the vanilla server jar
-- `-dir <path>` - Install to a specific directory (default: current directory)
-
-### 3. Install the Fabric API
+### 2. Install the Fabric API
 
 Most mods require the Fabric API. Download it from:
 - https://modrinth.com/mod/fabric-api
@@ -56,7 +67,7 @@ mkdir -p mods
 mv fabric-api-*.jar mods/
 ```
 
-### 4. Adding Mods
+### 3. Adding Mods
 
 1. Download Fabric-compatible mods from [Modrinth](https://modrinth.com) or [CurseForge](https://www.curseforge.com)
 2. Ensure the mod version matches your Minecraft version
@@ -70,7 +81,7 @@ mods/
 └── another-mod.jar
 ```
 
-### 5. Start the Server
+### 4. Start the Server
 
 Use the existing management commands:
 
@@ -104,6 +115,8 @@ make logs     # View server logs to verify mods loaded
 | `make install` | Install systemd services |
 | `make uninstall` | Remove systemd services |
 | `make playit-download` | Download playit.gg binary |
+| `make fabric-download` | Download Fabric installer |
+| `make fabric-install` | Install Fabric server |
 
 ### Directory Structure
 
@@ -111,6 +124,7 @@ make logs     # View server logs to verify mods loaded
 minecraft/
 ├── server.jar              # Fabric server launcher (after Fabric install)
 ├── fabric-server-launch.jar
+├── fabric-installer-*.jar  # Fabric installer
 ├── playit                  # playit.gg tunnel binary
 ├── mods/                   # Fabric mods go here
 ├── config/                 # Mod configuration files

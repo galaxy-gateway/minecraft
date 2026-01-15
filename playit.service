@@ -2,8 +2,6 @@
 Description=playit.gg Tunnel for Minecraft
 After=network-online.target
 Wants=network-online.target
-PartOf=minecraft.service
-After=minecraft.service
 
 [Service]
 Type=simple
@@ -14,4 +12,4 @@ Restart=always
 RestartSec=10
 
 [Install]
-WantedBy=minecraft.service
+WantedBy=multi-user.target
