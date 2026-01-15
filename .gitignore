@@ -1,6 +1,7 @@
 # Minecraft Server Files
 server.jar
 *.jar
+playit
 
 # World data
 world/

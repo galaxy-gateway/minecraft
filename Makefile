@@ -1,23 +1,25 @@
 # Minecraft Server Management
-# Server: Minecraft 1.21.11
+# Server: Minecraft 1.21.1 (Fabric) / Vanilla
 # Location: /home/caavere/Projects/minecraft
 # External Access: playit.gg tunnel (starbase.minecraft.party)
 
 .PHONY: help start stop restart status \
         server-start server-stop server-restart server-status \
+        fabric-start fabric-stop fabric-restart fabric-status \
         playit-start playit-stop playit-restart playit-status playit-logs \
         backup logs console \
-        install uninstall server-install server-uninstall playit-install playit-uninstall \
+        install uninstall server-install server-uninstall fabric-server-install fabric-server-uninstall playit-install playit-uninstall \
         playit-download fabric-download fabric-install
 
 # Configuration
 TMUX_SESSION = minecraft
 SERVER_SERVICE = minecraft
+FABRIC_SERVICE = minecraft-fabric
 PLAYIT_SERVICE = playit
 PLAYIT_BIN = /home/caavere/Projects/minecraft/playit
 
 # Fabric configuration
-MC_VERSION = 1.21.11
+MC_VERSION = 1.21.1
 FABRIC_INSTALLER_VERSION = 1.1.1
 FABRIC_INSTALLER = fabric-installer-$(FABRIC_INSTALLER_VERSION).jar
 FABRIC_INSTALLER_URL = https://maven.fabricmc.net/net/fabricmc/fabric-installer/$(FABRIC_INSTALLER_VERSION)/$(FABRIC_INSTALLER)
@@ -37,11 +39,19 @@ help:
 	@echo "  restart         - Restart server + playit tunnel"
 	@echo "  status          - Show status of all services"
 	@echo ""
-	@echo "Minecraft Server:"
-	@echo "  server-start    - Start Minecraft server only"
-	@echo "  server-stop     - Stop Minecraft server only"
-	@echo "  server-restart  - Restart Minecraft server only"
-	@echo "  server-status   - Show Minecraft server status"
+	@echo "Vanilla Server:"
+	@echo "  server-start    - Start vanilla Minecraft server"
+	@echo "  server-stop     - Stop vanilla Minecraft server"
+	@echo "  server-restart  - Restart vanilla Minecraft server"
+	@echo "  server-status   - Show vanilla server status"
+	@echo ""
+	@echo "Fabric Server (mods):"
+	@echo "  fabric-start    - Start Fabric modded server"
+	@echo "  fabric-stop     - Stop Fabric modded server"
+	@echo "  fabric-restart  - Restart Fabric modded server"
+	@echo "  fabric-status   - Show Fabric server status"
+	@echo ""
+	@echo "Server Tools:"
 	@echo "  console         - Attach to server console (Ctrl+B, D to detach)"
 	@echo "  logs            - Tail server logs"
 	@echo "  backup          - Create world backup"
@@ -54,15 +64,17 @@ help:
 	@echo "  playit-logs     - Tail playit tunnel logs"
 	@echo ""
 	@echo "Setup:"
-	@echo "  install         - Install all systemd services"
-	@echo "  uninstall       - Remove all systemd services"
-	@echo "  server-install  - Install Minecraft service only"
-	@echo "  server-uninstall- Remove Minecraft service only"
-	@echo "  playit-install  - Install playit service only"
-	@echo "  playit-uninstall- Remove playit service only"
-	@echo "  playit-download - Download playit.gg binary"
-	@echo "  fabric-download - Download Fabric installer"
-	@echo "  fabric-install  - Install Fabric server (MC $(MC_VERSION))"
+	@echo "  install              - Install vanilla + playit services"
+	@echo "  uninstall            - Remove all systemd services"
+	@echo "  server-install       - Install vanilla Minecraft service"
+	@echo "  server-uninstall     - Remove vanilla Minecraft service"
+	@echo "  fabric-server-install   - Install Fabric server service"
+	@echo "  fabric-server-uninstall - Remove Fabric server service"
+	@echo "  playit-install       - Install playit service"
+	@echo "  playit-uninstall     - Remove playit service"
+	@echo "  playit-download      - Download playit.gg binary"
+	@echo "  fabric-download      - Download Fabric installer"
+	@echo "  fabric-install       - Install Fabric server (MC $(MC_VERSION))"
 
 #===============================================================================
 # ALL SERVICES
@@ -103,10 +115,38 @@ server-restart:
 	@$(MAKE) --no-print-directory server-status
 
 server-status:
-	@echo "=== Minecraft Server ==="
+	@echo "=== Vanilla Server ==="
 	@printf "  Service:  "; systemctl is-active $(SERVER_SERVICE) 2>/dev/null || echo "inactive"
 	@printf "  tmux:     "; tmux has-session -t $(TMUX_SESSION) 2>/dev/null && echo "active" || echo "inactive"
 	@printf "  Process:  "; pgrep -f "server.jar" >/dev/null 2>&1 && echo "running (PID $$(pgrep -f 'server.jar' | head -1))" || echo "not running"
+
+#===============================================================================
+# FABRIC SERVER (MODDED)
+#===============================================================================
+
+fabric-start:
+	@echo "Starting Fabric server..."
+	@sudo systemctl start $(FABRIC_SERVICE)
+	@sleep 2
+	@systemctl is-active --quiet $(FABRIC_SERVICE) && echo "Fabric server started" || echo "Failed to start Fabric server"
+
+fabric-stop:
+	@echo "Stopping Fabric server..."
+	@sudo systemctl stop $(FABRIC_SERVICE)
+	@sleep 2
+	@systemctl is-active --quiet $(FABRIC_SERVICE) && echo "Server still running" || echo "Fabric server stopped"
+
+fabric-restart:
+	@echo "Restarting Fabric server..."
+	@sudo systemctl restart $(FABRIC_SERVICE)
+	@sleep 3
+	@$(MAKE) --no-print-directory fabric-status
+
+fabric-status:
+	@echo "=== Fabric Server ==="
+	@printf "  Service:  "; systemctl is-active $(FABRIC_SERVICE) 2>/dev/null || echo "inactive"
+	@printf "  tmux:     "; tmux has-session -t $(TMUX_SESSION) 2>/dev/null && echo "active" || echo "inactive"
+	@printf "  Process:  "; pgrep -f "fabric-server-launch.jar" >/dev/null 2>&1 && echo "running (PID $$(pgrep -f 'fabric-server-launch.jar' | head -1))" || echo "not running"
 
 console:
 	@echo "Attaching to Minecraft console..."
@@ -158,7 +198,7 @@ install: server-install playit-install
 	@echo ""
 	@echo "All services installed. Run 'make start' to start."
 
-uninstall: playit-uninstall server-uninstall
+uninstall: playit-uninstall fabric-server-uninstall server-uninstall
 	@echo ""
 	@echo "All services removed."
 
@@ -170,12 +210,27 @@ server-install:
 	@echo "Minecraft service installed and enabled."
 
 server-uninstall:
-	@echo "Removing Minecraft service..."
+	@echo "Removing vanilla Minecraft service..."
 	@sudo systemctl stop $(SERVER_SERVICE) 2>/dev/null || true
 	@sudo systemctl disable $(SERVER_SERVICE) 2>/dev/null || true
 	@sudo rm -f /etc/systemd/system/minecraft.service
 	@sudo systemctl daemon-reload
-	@echo "Minecraft service removed."
+	@echo "Vanilla Minecraft service removed."
+
+fabric-server-install:
+	@echo "Installing Fabric server service..."
+	@sudo cp minecraft-fabric.service /etc/systemd/system/
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable $(FABRIC_SERVICE)
+	@echo "Fabric server service installed and enabled."
+
+fabric-server-uninstall:
+	@echo "Removing Fabric server service..."
+	@sudo systemctl stop $(FABRIC_SERVICE) 2>/dev/null || true
+	@sudo systemctl disable $(FABRIC_SERVICE) 2>/dev/null || true
+	@sudo rm -f /etc/systemd/system/minecraft-fabric.service
+	@sudo systemctl daemon-reload
+	@echo "Fabric server service removed."
 
 playit-install:
 	@echo "Installing playit service..."
@@ -215,4 +270,7 @@ fabric-install: fabric-download
 	@echo "Fabric installed."
 	@ls -la server.jar fabric-server-launch.jar 2>/dev/null || true
 	@echo ""
-	@echo "Next: Place mods in 'mods/' and run 'make start'"
+	@echo "Next steps:"
+	@echo "  1. Place mods in 'mods/' folder"
+	@echo "  2. Run 'make fabric-server-install' to install the systemd service"
+	@echo "  3. Run 'make fabric-start' to start the Fabric server"

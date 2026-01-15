@@ -1,5 +1,5 @@
 [Unit]
-Description=Minecraft Server (1.21.11)
+Description=Minecraft Vanilla Server
 After=network.target
 Wants=network-online.target
 
