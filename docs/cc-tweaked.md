@@ -12,11 +12,11 @@ CC: Tweaked is a ComputerCraft fork that adds programmable computers, turtles, a
 | Minecraft Version | CC: Tweaked Version | Status |
 |-------------------|---------------------|--------|
 | 1.21.11           | Not available       | Waiting for update |
-| 1.21.8            | 1.117.0             | Latest supported |
-| 1.21.1            | 1.117.0             | Supported |
+| 1.21.8            | 1.117.0             | Supported |
+| 1.21.1            | 1.117.0             | **Current (this server)** |
 | 1.20.1            | 1.113.1             | Supported |
 
-**Note:** This server runs Minecraft 1.21.11. As of January 2025, CC: Tweaked has not released a version for 1.21.11. The latest Fabric version supports up to 1.21.8.
+**Note:** This server runs Minecraft **1.21.1** with CC: Tweaked 1.117.0.
 
 ## Installation
 
@@ -48,6 +48,10 @@ CC: Tweaked is a ComputerCraft fork that adds programmable computers, turtles, a
 2. **Try 1.21.8 version** - May work across minor version differences
 3. **Downgrade server** - Use `make fabric-install` with MC_VERSION=1.21.8
 
+## Client Setup
+
+Clients connecting to the server **must have the same mods installed**. See [client-setup.md](client-setup.md) for detailed instructions.
+
 ## Troubleshooting
 
 If the mod fails to load, check the logs:
@@ -59,3 +63,4 @@ Common issues:
 - Missing Fabric API dependency
 - Version mismatch between Minecraft and mod
 - Incompatible mod combinations
+- **Client missing mods** - Clients must install Fabric + same mods as server (see [client-setup.md](client-setup.md))

@@ -33,10 +33,10 @@ help:
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "All Services:"
-	@echo "  start           - Start server + playit tunnel"
-	@echo "  stop            - Stop server + playit tunnel"
-	@echo "  restart         - Restart server + playit tunnel"
+	@echo "Quick Start (Fabric + Tunnel):"
+	@echo "  start           - Start Fabric server + playit tunnel"
+	@echo "  stop            - Stop Fabric server + playit tunnel"
+	@echo "  restart         - Restart Fabric server + playit tunnel"
 	@echo "  status          - Show status of all services"
 	@echo ""
 	@echo "Vanilla Server:"
@@ -77,20 +77,22 @@ help:
 	@echo "  fabric-install       - Install Fabric server (MC $(MC_VERSION))"
 
 #===============================================================================
-# ALL SERVICES
+# ALL SERVICES (FABRIC + PLAYIT)
 #===============================================================================
 
-start: server-start playit-start
+start: fabric-start playit-start
 	@echo ""
 	@$(MAKE) --no-print-directory status
 
-stop: playit-stop server-stop
+stop: playit-stop fabric-stop
 	@echo ""
 	@$(MAKE) --no-print-directory status
 
-restart: stop start
+restart:
+	@$(MAKE) --no-print-directory stop
+	@$(MAKE) --no-print-directory start
 
-status: server-status playit-status
+status: fabric-status playit-status
 
 #===============================================================================
 # MINECRAFT SERVER
