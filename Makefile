@@ -7,7 +7,7 @@
         server-start server-stop server-restart server-status \
         fabric-start fabric-stop fabric-restart fabric-status \
         playit-start playit-stop playit-restart playit-status playit-logs \
-        backup logs console \
+        backup backup-list restore logs console \
         install uninstall server-install server-uninstall fabric-server-install fabric-server-uninstall playit-install playit-uninstall \
         playit-download fabric-download fabric-install
 
@@ -54,7 +54,12 @@ help:
 	@echo "Server Tools:"
 	@echo "  console         - Attach to server console (Ctrl+B, D to detach)"
 	@echo "  logs            - Tail server logs"
-	@echo "  backup          - Create world backup"
+	@echo ""
+	@echo "Backups:"
+	@echo "  backup          - Create timestamped backup"
+	@echo "  backup NAME=x   - Create named backup (e.g., make backup NAME=before-update)"
+	@echo "  backup-list     - List all backups"
+	@echo "  restore NAME=x  - Restore from backup (server must be stopped)"
 	@echo ""
 	@echo "Playit Tunnel:"
 	@echo "  playit-start    - Start playit tunnel only"
@@ -159,8 +164,31 @@ console:
 logs:
 	@tail -f logs/latest.log
 
+#===============================================================================
+# BACKUPS
+#===============================================================================
+
 backup:
+ifdef NAME
+	@./backup.sh "$(NAME)"
+else
 	@./backup.sh
+endif
+
+backup-list:
+	@echo "=== Available Backups ==="
+	@ls -lht backups/*.tar.gz 2>/dev/null | awk '{printf "  %-40s %s %s %s\n", $$9, $$6, $$7, $$5}' | sed 's|backups/||g' || echo "  No backups found"
+
+restore:
+ifndef NAME
+	@echo "Usage: make restore NAME=<backup_name>"
+	@echo ""
+	@echo "Available backups:"
+	@ls -1t backups/*.tar.gz 2>/dev/null | xargs -I{} basename {} .tar.gz | sed 's/world_//g' | awk '{print "  " $$0}' || echo "  No backups found"
+	@exit 1
+else
+	@./restore.sh "$(NAME)"
+endif
 
 #===============================================================================
 # PLAYIT TUNNEL
