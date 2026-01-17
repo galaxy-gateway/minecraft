@@ -1,0 +1,30 @@
+[package]
+name = "minecraft-web-admin"
+version = "0.1.0"
+edition = "2021"
+description = "Web-based admin panel for Minecraft server management"
+
+[dependencies]
+axum = { version = "0.7", features = ["ws", "multipart"] }
+tokio = { version = "1", features = ["full", "sync"] }
+tower-http = { version = "0.5", features = ["fs", "cors", "trace"] }
+tower-sessions = "0.13"
+tower-sessions-moka-store = "0.14"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+argon2 = "0.5"
+notify = "6"
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+thiserror = "1"
+anyhow = "1"
+futures = "0.3"
+tokio-stream = "0.1"
+time = "0.3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

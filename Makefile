@@ -9,14 +9,17 @@
         playit-start playit-stop playit-restart playit-status playit-logs \
         backup backup-list restore logs console \
         install uninstall server-install server-uninstall fabric-server-install fabric-server-uninstall playit-install playit-uninstall \
-        playit-download fabric-download fabric-install
+        playit-download fabric-download fabric-install \
+        webadmin-build webadmin-start webadmin-stop webadmin-restart webadmin-status webadmin-logs webadmin-install webadmin-uninstall
 
 # Configuration
 TMUX_SESSION = minecraft
 SERVER_SERVICE = minecraft
 FABRIC_SERVICE = minecraft-fabric
 PLAYIT_SERVICE = playit
+WEBADMIN_SERVICE = minecraft-webadmin
 PLAYIT_BIN = /home/caavere/Projects/minecraft/playit
+WEBADMIN_DIR = /home/caavere/Projects/minecraft/web-admin
 
 # Fabric configuration
 MC_VERSION = 1.21.1
@@ -80,6 +83,16 @@ help:
 	@echo "  playit-download      - Download playit.gg binary"
 	@echo "  fabric-download      - Download Fabric installer"
 	@echo "  fabric-install       - Install Fabric server (MC $(MC_VERSION))"
+	@echo ""
+	@echo "Web Admin:"
+	@echo "  webadmin-build       - Build web admin panel"
+	@echo "  webadmin-start       - Start web admin service"
+	@echo "  webadmin-stop        - Stop web admin service"
+	@echo "  webadmin-restart     - Restart web admin service"
+	@echo "  webadmin-status      - Show web admin status"
+	@echo "  webadmin-logs        - Tail web admin logs"
+	@echo "  webadmin-install     - Install web admin service"
+	@echo "  webadmin-uninstall   - Remove web admin service"
 
 #===============================================================================
 # ALL SERVICES (FABRIC + PLAYIT)
@@ -304,3 +317,57 @@ fabric-install: fabric-download
 	@echo "  1. Place mods in 'mods/' folder"
 	@echo "  2. Run 'make fabric-server-install' to install the systemd service"
 	@echo "  3. Run 'make fabric-start' to start the Fabric server"
+
+#===============================================================================
+# WEB ADMIN
+#===============================================================================
+
+webadmin-build:
+	@echo "Building web admin panel..."
+	@cd $(WEBADMIN_DIR) && cargo build --release
+	@echo "Build complete: $(WEBADMIN_DIR)/target/release/minecraft-web-admin"
+
+webadmin-start:
+	@echo "Starting web admin..."
+	@sudo systemctl start $(WEBADMIN_SERVICE)
+	@sleep 1
+	@systemctl is-active --quiet $(WEBADMIN_SERVICE) && echo "Web admin started (http://127.0.0.1:8180)" || echo "Failed to start web admin"
+
+webadmin-stop:
+	@echo "Stopping web admin..."
+	@sudo systemctl stop $(WEBADMIN_SERVICE)
+	@sleep 1
+	@systemctl is-active --quiet $(WEBADMIN_SERVICE) && echo "Web admin still running" || echo "Web admin stopped"
+
+webadmin-restart:
+	@echo "Restarting web admin..."
+	@sudo systemctl restart $(WEBADMIN_SERVICE)
+	@sleep 1
+	@$(MAKE) --no-print-directory webadmin-status
+
+webadmin-status:
+	@echo "=== Web Admin ==="
+	@printf "  Service:  "; systemctl is-active $(WEBADMIN_SERVICE) 2>/dev/null || echo "inactive"
+	@printf "  URL:      "; systemctl is-active --quiet $(WEBADMIN_SERVICE) && echo "http://127.0.0.1:8180" || echo "n/a"
+
+webadmin-logs:
+	@journalctl -u $(WEBADMIN_SERVICE) -f
+
+webadmin-install: webadmin-build
+	@echo "Installing web admin service..."
+	@sudo cp $(WEBADMIN_DIR)/web-admin.service /etc/systemd/system/$(WEBADMIN_SERVICE).service
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable $(WEBADMIN_SERVICE)
+	@echo "Web admin service installed and enabled."
+	@echo ""
+	@echo "To start: make webadmin-start"
+	@echo "Access at: http://127.0.0.1:8180"
+	@echo "Default login: admin / admin (change in $(WEBADMIN_DIR)/.env)"
+
+webadmin-uninstall:
+	@echo "Removing web admin service..."
+	@sudo systemctl stop $(WEBADMIN_SERVICE) 2>/dev/null || true
+	@sudo systemctl disable $(WEBADMIN_SERVICE) 2>/dev/null || true
+	@sudo rm -f /etc/systemd/system/$(WEBADMIN_SERVICE).service
+	@sudo systemctl daemon-reload
+	@echo "Web admin service removed."

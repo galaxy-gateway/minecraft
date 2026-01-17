@@ -1,0 +1,15 @@
+[Unit]
+Description=Minecraft Web Admin
+After=network.target
+
+[Service]
+Type=simple
+User=caavere
+WorkingDirectory=/home/caavere/Projects/minecraft/web-admin
+ExecStart=/home/caavere/Projects/minecraft/web-admin/target/release/minecraft-web-admin
+Restart=on-failure
+RestartSec=5
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=multi-user.target

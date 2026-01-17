@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Server Admin</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>MC Admin</h1>
+                <p>Server Management</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">&#x1F3E0;</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a class="nav-item" data-page="console">
+                    <span class="nav-icon">&#x1F4BB;</span>
+                    <span class="nav-text">Console</span>
+                </a>
+                <a class="nav-item" data-page="logs">
+                    <span class="nav-icon">&#x1F4DC;</span>
+                    <span class="nav-text">Logs</span>
+                </a>
+                <a class="nav-item" data-page="mods">
+                    <span class="nav-icon">&#x1F9E9;</span>
+                    <span class="nav-text">Mods</span>
+                </a>
+                <a class="nav-item" data-page="players">
+                    <span class="nav-icon">&#x1F465;</span>
+                    <span class="nav-text">Players</span>
+                </a>
+                <a class="nav-item" data-page="backups">
+                    <span class="nav-icon">&#x1F4BE;</span>
+                    <span class="nav-text">Backups</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="btn btn-ghost btn-full">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                </div>
+
+                <div class="grid grid-2">
+                    <!-- Server Status Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Server Status</h3>
+                            <span id="server-status-badge" class="status-badge inactive">
+                                <span class="status-dot"></span>inactive
+                            </span>
+                        </div>
+                        <div class="card-body status-card">
+                            <div class="status-info">
+                                <div>
+                                    <p id="server-status-text">Server is stopped</p>
+                                    <p class="file-size">tmux session: <span id="tmux-status">Inactive</span></p>
+                                </div>
+                            </div>
+                            <div class="status-actions">
+                                <button class="btn btn-success" onclick="app.serverAction('start')">Start</button>
+                                <button class="btn btn-danger" onclick="app.serverAction('stop')">Stop</button>
+                                <button class="btn btn-warning" onclick="app.serverAction('restart')">Restart</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2" style="gap: 0.75rem;">
+                                <button class="btn btn-primary" onclick="app.showPage('console')">Open Console</button>
+                                <button class="btn btn-primary" onclick="app.showPage('logs')">View Logs</button>
+                                <button class="btn btn-primary" onclick="app.showPage('backups'); app.createBackup();">Quick Backup</button>
+                                <button class="btn btn-primary" onclick="app.loadDashboard()">Refresh Status</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console Page -->
+            <div id="page-console" class="page hidden">
+                <div class="page-header">
+                    <h2>Server Console</h2>
+                </div>
+
+                <div class="console-container">
+                    <div id="console-output" class="console-output"></div>
+                    <div class="console-input-container">
+                        <input type="text" id="console-input" class="console-input" placeholder="Enter command..." autocomplete="off">
+                        <button class="console-send" onclick="app.sendConsoleCommand()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Page -->
+            <div id="page-logs" class="page hidden">
+                <div class="page-header">
+                    <h2>Server Logs</h2>
+                </div>
+
+                <div id="log-container" class="log-container"></div>
+            </div>
+
+            <!-- Mods Page -->
+            <div id="page-mods" class="page hidden">
+                <div class="page-header">
+                    <h2>Mod Manager</h2>
+                </div>
+
+                <!-- Upload Area -->
+                <div id="mod-upload-area" class="upload-area" style="margin-bottom: 1.5rem;">
+                    <div class="upload-icon">&#x1F4E4;</div>
+                    <p class="upload-text">Drag and drop .jar files here or click to upload</p>
+                    <input type="file" id="mod-file-input" accept=".jar" style="display: none;">
+                </div>
+
+                <!-- Mods List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Installed Mods</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="app.loadMods()">Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Size</th>
+                                    <th>Modified</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mods-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Players Page -->
+            <div id="page-players" class="page hidden">
+                <div class="page-header">
+                    <h2>Player Management</h2>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="ops" onclick="app.showTab('ops')">Operators</div>
+                    <div class="tab" data-tab="whitelist" onclick="app.showTab('whitelist')">Whitelist</div>
+                    <div class="tab" data-tab="banned" onclick="app.showTab('banned')">Banned</div>
+                </div>
+
+                <!-- Ops Tab -->
+                <div id="tab-ops" class="tab-content active">
+                    <div class="input-group" style="margin-bottom: 1rem;">
+                        <input type="text" id="add-op-input" placeholder="Player name">
+                        <button class="btn btn-primary" onclick="app.addOp()">Add Op</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Level</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ops-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Whitelist Tab -->
+                <div id="tab-whitelist" class="tab-content">
+                    <div class="input-group" style="margin-bottom: 1rem;">
+                        <input type="text" id="add-whitelist-input" placeholder="Player name">
+                        <button class="btn btn-primary" onclick="app.addWhitelist()">Add to Whitelist</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="whitelist-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banned Tab -->
+                <div id="tab-banned" class="tab-content">
+                    <div class="input-group" style="margin-bottom: 1rem;">
+                        <input type="text" id="ban-player-input" placeholder="Player name">
+                        <button class="btn btn-danger" onclick="app.banPlayer()">Ban Player</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Reason</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="banned-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backups Page -->
+            <div id="page-backups" class="page hidden">
+                <div class="page-header">
+                    <h2>Backup Manager</h2>
+                </div>
+
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="text" id="backup-name-input" placeholder="Backup name (optional)">
+                            <button class="btn btn-success" onclick="app.createBackup()">Create Backup</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Available Backups</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="app.loadBackups()">Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Size</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backups-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/websocket.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
