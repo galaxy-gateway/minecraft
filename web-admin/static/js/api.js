@@ -242,6 +242,67 @@ const api = {
             throw new Error(data.error || 'Failed to restore backup');
         }
         return res.json();
+    },
+
+    // Scripts
+    async getScripts() {
+        const res = await fetch('/api/scripts');
+        if (!res.ok) throw new Error('Failed to get scripts');
+        return res.json();
+    },
+
+    async uploadScript(file, metadata) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (metadata.name) formData.append('name', metadata.name);
+        if (metadata.description) formData.append('description', metadata.description);
+        if (metadata.version) formData.append('version', metadata.version);
+        if (metadata.category) formData.append('category', metadata.category);
+        if (metadata.author) formData.append('author', metadata.author);
+
+        const res = await fetch('/api/scripts/upload', {
+            method: 'POST',
+            body: formData
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to upload script');
+        }
+        return res.json();
+    },
+
+    async getScript(filename) {
+        const res = await fetch(`/api/scripts/${encodeURIComponent(filename)}`);
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to get script');
+        }
+        return res.json();
+    },
+
+    async deleteScript(filename) {
+        const res = await fetch(`/api/scripts/${encodeURIComponent(filename)}`, {
+            method: 'DELETE'
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!res.ok) {
+            throw new Error(data.error || 'Failed to delete script');
+        }
+        return data;
+    },
+
+    async updateScriptMetadata(filename, metadata) {
+        const res = await fetch(`/api/scripts/${encodeURIComponent(filename)}/metadata`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(metadata)
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to update script metadata');
+        }
+        return res.json();
     }
 };
 

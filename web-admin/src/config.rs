@@ -48,4 +48,8 @@ impl Config {
     pub fn restore_script(&self) -> PathBuf {
         self.minecraft_dir.join("restore.sh")
     }
+
+    pub fn lua_scripts_dir(&self) -> PathBuf {
+        self.minecraft_dir.join("lua-scripts")
+    }
 }

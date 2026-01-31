@@ -39,6 +39,10 @@
                     <span class="nav-icon">&#x1F4BE;</span>
                     <span class="nav-text">Backups</span>
                 </a>
+                <a class="nav-item" data-page="scripts">
+                    <span class="nav-icon">&#x1F4DC;</span>
+                    <span class="nav-text">Lua Scripts</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <button id="logout-btn" class="btn btn-ghost btn-full">Logout</button>
@@ -263,6 +267,165 @@
                             </thead>
                             <tbody id="backups-list"></tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scripts Page -->
+            <div id="page-scripts" class="page hidden">
+                <div class="page-header">
+                    <h2>Lua Script Library</h2>
+                </div>
+
+                <!-- Upload Area -->
+                <div id="script-upload-area" class="upload-area" style="margin-bottom: 1.5rem;">
+                    <div class="upload-icon">&#x1F4E4;</div>
+                    <p class="upload-text">Drag and drop .lua files here or click to upload</p>
+                    <input type="file" id="script-file-input" accept=".lua" style="display: none;">
+                </div>
+
+                <!-- Upload Form (hidden by default) -->
+                <div id="script-upload-form" class="card hidden" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <h3>Upload Script</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="app.cancelScriptUpload()">Cancel</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>File</label>
+                                <span id="script-upload-filename">-</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="script-name-input" placeholder="Script name">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <input type="text" id="script-description-input" placeholder="What does this script do?">
+                            </div>
+                            <div class="form-group">
+                                <label>Version</label>
+                                <input type="text" id="script-version-input" placeholder="1.0.0" value="1.0.0">
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="script-category-input">
+                                    <option value="utility">Utility</option>
+                                    <option value="mining">Mining</option>
+                                    <option value="farming">Farming</option>
+                                    <option value="building">Building</option>
+                                    <option value="redstone">Redstone</option>
+                                    <option value="networking">Networking</option>
+                                    <option value="game">Game</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Author</label>
+                                <input type="text" id="script-author-input" placeholder="Author name" value="admin">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="app.submitScriptUpload()" style="margin-top: 1rem;">Upload Script</button>
+                    </div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <div class="input-group">
+                            <select id="script-category-filter" onchange="app.filterScripts()">
+                                <option value="">All Categories</option>
+                                <option value="utility">Utility</option>
+                                <option value="mining">Mining</option>
+                                <option value="farming">Farming</option>
+                                <option value="building">Building</option>
+                                <option value="redstone">Redstone</option>
+                                <option value="networking">Networking</option>
+                                <option value="game">Game</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" id="script-search-input" placeholder="Search scripts..." oninput="app.filterScripts()">
+                            <button class="btn btn-ghost btn-sm" onclick="app.loadScripts()">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scripts List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Available Scripts</h3>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Version</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scripts-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script View Modal -->
+            <div id="script-view-modal" class="modal hidden">
+                <div class="modal-content" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h3 id="script-view-title">Script</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="app.closeScriptModal()">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="script-meta" id="script-view-meta"></div>
+                        <pre id="script-view-content" class="code-block"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Edit Modal -->
+            <div id="script-edit-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Edit Script Metadata</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="app.closeEditModal()">Close</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-script-filename">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" id="edit-script-name">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="edit-script-description">
+                        </div>
+                        <div class="form-group">
+                            <label>Version</label>
+                            <input type="text" id="edit-script-version">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="edit-script-category">
+                                <option value="utility">Utility</option>
+                                <option value="mining">Mining</option>
+                                <option value="farming">Farming</option>
+                                <option value="building">Building</option>
+                                <option value="redstone">Redstone</option>
+                                <option value="networking">Networking</option>
+                                <option value="game">Game</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Author</label>
+                            <input type="text" id="edit-script-author">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.saveScriptMetadata()">Save Changes</button>
                     </div>
                 </div>
             </div>

@@ -10,7 +10,7 @@ use std::sync::Arc;
 use axum::{
     extract::DefaultBodyLimit,
     middleware,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use tokio::sync::broadcast;
@@ -117,6 +117,15 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/backups", post(handlers::backups::create))
         .route("/api/backups/:filename", delete(handlers::backups::delete))
         .route("/api/backups/:filename/restore", post(handlers::backups::restore))
+        // Scripts
+        .route("/api/scripts", get(handlers::scripts::list))
+        .route(
+            "/api/scripts/upload",
+            post(handlers::scripts::upload).layer(DefaultBodyLimit::max(1024 * 1024)), // 1MB
+        )
+        .route("/api/scripts/:filename", get(handlers::scripts::download))
+        .route("/api/scripts/:filename", delete(handlers::scripts::delete))
+        .route("/api/scripts/:filename/metadata", put(handlers::scripts::update_metadata))
         .route_layer(middleware::from_fn(auth::require_auth));
 
     // Combine routes and add static file serving

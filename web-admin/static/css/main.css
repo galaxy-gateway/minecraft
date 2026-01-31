@@ -696,3 +696,79 @@ tr:hover {
     justify-content: flex-end;
     gap: 0.5rem;
 }
+
+/* Modal overlay styling for scripts */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-width: 400px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Form grid for script upload */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.form-grid .form-group:first-child {
+    grid-column: 1 / -1;
+}
+
+/* Category badge */
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+
+/* Code block for script preview */
+.code-block {
+    background: var(--console-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.8125rem;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre;
+    color: var(--console-text);
+}
+
+/* Script metadata in view modal */
+.script-meta {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.script-meta p {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.script-meta strong {
+    color: var(--text-secondary);
+}

@@ -6,6 +6,8 @@ const app = {
     logsWs: null,
     commandHistory: [],
     commandHistoryIndex: -1,
+    allScripts: [],
+    pendingScriptFile: null,
 
     async init() {
         // Check authentication
@@ -93,6 +95,9 @@ const app = {
                 break;
             case 'backups':
                 await this.loadBackups();
+                break;
+            case 'scripts':
+                await this.loadScripts();
                 break;
         }
     },
@@ -561,6 +566,214 @@ const app = {
         }
     },
 
+    // Scripts
+    async loadScripts() {
+        const list = document.getElementById('scripts-list');
+        list.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+
+        try {
+            const data = await api.getScripts();
+            this.allScripts = data.scripts;
+            this.renderScripts(data.scripts);
+        } catch (e) {
+            list.innerHTML = `<tr><td colspan="5" class="error-message">Failed to load scripts: ${e.message}</td></tr>`;
+        }
+    },
+
+    renderScripts(scripts) {
+        const list = document.getElementById('scripts-list');
+
+        if (scripts.length === 0) {
+            list.innerHTML = '<tr><td colspan="5" class="empty-state">No scripts found</td></tr>';
+            return;
+        }
+
+        list.innerHTML = scripts.map(script => `
+            <tr>
+                <td>
+                    <strong>${this.escapeHtml(script.name)}</strong>
+                    <div class="file-size">${this.escapeHtml(script.description || 'No description')}</div>
+                </td>
+                <td><span class="category-badge">${this.escapeHtml(script.category)}</span></td>
+                <td>${this.escapeHtml(script.version)}</td>
+                <td class="file-size">${this.formatSize(script.size)}</td>
+                <td class="actions">
+                    <button class="btn btn-primary btn-sm" onclick="app.viewScript('${this.escapeHtml(script.filename)}')">View</button>
+                    <button class="btn btn-ghost btn-sm" onclick="app.editScriptMetadata('${this.escapeHtml(script.filename)}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="app.deleteScript('${this.escapeHtml(script.filename)}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    },
+
+    filterScripts() {
+        const category = document.getElementById('script-category-filter').value;
+        const search = document.getElementById('script-search-input').value.toLowerCase();
+
+        let filtered = this.allScripts;
+
+        if (category) {
+            filtered = filtered.filter(s => s.category === category);
+        }
+
+        if (search) {
+            filtered = filtered.filter(s =>
+                s.name.toLowerCase().includes(search) ||
+                s.description.toLowerCase().includes(search) ||
+                s.filename.toLowerCase().includes(search)
+            );
+        }
+
+        this.renderScripts(filtered);
+    },
+
+    async viewScript(filename) {
+        try {
+            const data = await api.getScript(filename);
+
+            document.getElementById('script-view-title').textContent = data.metadata?.name || filename;
+            document.getElementById('script-view-meta').innerHTML = `
+                <p><strong>Filename:</strong> ${this.escapeHtml(data.filename)}</p>
+                <p><strong>Description:</strong> ${this.escapeHtml(data.metadata?.description || 'No description')}</p>
+                <p><strong>Version:</strong> ${this.escapeHtml(data.metadata?.version || '1.0.0')}</p>
+                <p><strong>Category:</strong> ${this.escapeHtml(data.metadata?.category || 'uncategorized')}</p>
+                <p><strong>Author:</strong> ${this.escapeHtml(data.metadata?.author || 'unknown')}</p>
+            `;
+            document.getElementById('script-view-content').textContent = data.content;
+            document.getElementById('script-view-modal').classList.remove('hidden');
+        } catch (e) {
+            alert('Failed to load script: ' + e.message);
+        }
+    },
+
+    closeScriptModal() {
+        document.getElementById('script-view-modal').classList.add('hidden');
+    },
+
+    editScriptMetadata(filename) {
+        const script = this.allScripts.find(s => s.filename === filename);
+        if (!script) return;
+
+        document.getElementById('edit-script-filename').value = filename;
+        document.getElementById('edit-script-name').value = script.name;
+        document.getElementById('edit-script-description').value = script.description || '';
+        document.getElementById('edit-script-version').value = script.version || '1.0.0';
+        document.getElementById('edit-script-category').value = script.category || 'utility';
+        document.getElementById('edit-script-author').value = script.author || 'admin';
+        document.getElementById('script-edit-modal').classList.remove('hidden');
+    },
+
+    closeEditModal() {
+        document.getElementById('script-edit-modal').classList.add('hidden');
+    },
+
+    async saveScriptMetadata() {
+        const filename = document.getElementById('edit-script-filename').value;
+        const metadata = {
+            name: document.getElementById('edit-script-name').value,
+            description: document.getElementById('edit-script-description').value,
+            version: document.getElementById('edit-script-version').value,
+            category: document.getElementById('edit-script-category').value,
+            author: document.getElementById('edit-script-author').value
+        };
+
+        try {
+            await api.updateScriptMetadata(filename, metadata);
+            this.closeEditModal();
+            await this.loadScripts();
+        } catch (e) {
+            alert('Failed to update script: ' + e.message);
+        }
+    },
+
+    async deleteScript(filename) {
+        if (!confirm(`Delete script "${filename}"?`)) return;
+
+        try {
+            await api.deleteScript(filename);
+            await this.loadScripts();
+        } catch (e) {
+            alert('Failed to delete script: ' + e.message);
+        }
+    },
+
+    setupScriptUpload() {
+        const area = document.getElementById('script-upload-area');
+        const input = document.getElementById('script-file-input');
+
+        if (!area || !input) return;
+
+        area.onclick = () => input.click();
+
+        area.ondragover = (e) => {
+            e.preventDefault();
+            area.classList.add('dragover');
+        };
+
+        area.ondragleave = () => {
+            area.classList.remove('dragover');
+        };
+
+        area.ondrop = (e) => {
+            e.preventDefault();
+            area.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) this.prepareScriptUpload(file);
+        };
+
+        input.onchange = () => {
+            if (input.files[0]) {
+                this.prepareScriptUpload(input.files[0]);
+                input.value = '';
+            }
+        };
+    },
+
+    prepareScriptUpload(file) {
+        if (!file.name.endsWith('.lua')) {
+            alert('Only .lua files are allowed');
+            return;
+        }
+
+        this.pendingScriptFile = file;
+
+        // Show upload form
+        document.getElementById('script-upload-area').classList.add('hidden');
+        document.getElementById('script-upload-form').classList.remove('hidden');
+        document.getElementById('script-upload-filename').textContent = file.name;
+        document.getElementById('script-name-input').value = file.name.replace('.lua', '');
+        document.getElementById('script-description-input').value = '';
+        document.getElementById('script-version-input').value = '1.0.0';
+        document.getElementById('script-category-input').value = 'utility';
+        document.getElementById('script-author-input').value = 'admin';
+    },
+
+    cancelScriptUpload() {
+        this.pendingScriptFile = null;
+        document.getElementById('script-upload-area').classList.remove('hidden');
+        document.getElementById('script-upload-form').classList.add('hidden');
+    },
+
+    async submitScriptUpload() {
+        if (!this.pendingScriptFile) return;
+
+        const metadata = {
+            name: document.getElementById('script-name-input').value,
+            description: document.getElementById('script-description-input').value,
+            version: document.getElementById('script-version-input').value,
+            category: document.getElementById('script-category-input').value,
+            author: document.getElementById('script-author-input').value
+        };
+
+        try {
+            await api.uploadScript(this.pendingScriptFile, metadata);
+            this.cancelScriptUpload();
+            await this.loadScripts();
+        } catch (e) {
+            alert('Failed to upload script: ' + e.message);
+        }
+    },
+
     // Utilities
     formatSize(bytes) {
         const units = ['B', 'KB', 'MB', 'GB'];
@@ -583,4 +796,5 @@ const app = {
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
     app.setupModUpload();
+    app.setupScriptUpload();
 });
