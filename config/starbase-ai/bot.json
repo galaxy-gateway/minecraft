@@ -1,7 +1,13 @@
 {
-  "botName": "ARIA",
+  "botName": "bot",
   "spawnX": 0.0,
   "spawnY": 64.0,
   "spawnZ": 0.0,
-  "lookAtNearestPlayer": true
+  "lookAtNearestPlayer": true,
+  "respawnDelayTicks": 60,
+  "walkSpeed": 0.2,
+  "sprintSpeed": 0.26,
+  "followDistance": 3.0,
+  "pathRecalcTicks": 20,
+  "pathMaxRange": 64
 }
