@@ -1,0 +1,20 @@
+{
+    "schemaVersion": 1,
+    "id": "starbase-ai",
+    "version": "${version}",
+    "name": "Starbase AI Companion",
+    "description": "AI-powered bot player that chats with players via OpenAI",
+    "authors": ["Starbase"],
+    "license": "MIT",
+    "environment": "server",
+    "entrypoints": {
+        "server": ["com.starbase.ai.StarbaseAIMod"]
+    },
+    "accessWidener": "starbase-ai.accesswidener",
+    "depends": {
+        "fabricloader": ">=0.16.0",
+        "minecraft": "~1.21.1",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
+}

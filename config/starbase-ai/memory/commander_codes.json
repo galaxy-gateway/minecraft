@@ -1,0 +1,57 @@
+{
+  "playerName": "commander_codes",
+  "firstSeen": "2026-02-15T01:17:38.844490424Z",
+  "summary": "",
+  "conversations": [
+    {
+      "timestamp": "2026-02-15T01:17:39.075019427Z",
+      "playerMessage": "where are you?",
+      "botResponse": "Sorry, my thoughts are a bit fuzzy right now. Try again?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T01:19:18.797713796Z",
+      "playerMessage": "sup",
+      "botResponse": "Sorry, my thoughts are a bit fuzzy right now. Try again?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T01:35:10.871569314Z",
+      "playerMessage": "you there?",
+      "botResponse": "Sorry, my thoughts are a bit fuzzy right now. Try again?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T02:01:07.282383694Z",
+      "playerMessage": "are you there?",
+      "botResponse": "Yes, I\u0027m here! Ready to explore and assist you. What do you need?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T02:01:22.112454182Z",
+      "playerMessage": "where are you?",
+      "botResponse": "I\u0027m at (0, 64, 0), in the center of the map. How can I help you today?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T02:09:02.621144420Z",
+      "playerMessage": "are you okay?",
+      "botResponse": "I’m a bit confused right now, but I’m here to help! What\u0027s on your mind?",
+      "biome": "plains",
+      "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T02:09:16.743239541Z",
+      "playerMessage": "are you alive?",
+      "botResponse": "I\u0027m not alive like you, but I\u0027m here to assist and explore! What would you like to do?",
+      "biome": "plains",
+      "timeOfDay": "night"
+    }
+  ],
+  "messagesSinceSummary": 7
+}

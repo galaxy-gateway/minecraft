@@ -36,6 +36,9 @@ backups/
 # Crash reports
 crash-reports/
 
+# Secrets
+config/starbase-ai/personality.json
+
 # IDE and editor files
 *.swp
 *.swo
