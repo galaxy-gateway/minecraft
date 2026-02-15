@@ -8,6 +8,7 @@ import com.starbase.ai.behavior.idle.ApproachPlayerBehavior;
 import com.starbase.ai.behavior.idle.IdleLookAroundBehavior;
 import com.starbase.ai.behavior.idle.IdleWanderBehavior;
 import com.starbase.ai.behavior.survival.AvoidDangerBehavior;
+import com.starbase.ai.behavior.survival.AvoidDrowningBehavior;
 import com.starbase.ai.behavior.survival.FleeHostileBehavior;
 import com.starbase.ai.behavior.survival.NightShelterBehavior;
 import com.starbase.ai.behavior.task.FollowPlayerBehavior;
@@ -68,6 +69,7 @@ public class FakePlayerManager {
         // Register survival behaviors (priority 1)
         if (behaviorConfig.enableFleeHostile) behaviorManager.register(new FleeHostileBehavior());
         if (behaviorConfig.enableAvoidDanger) behaviorManager.register(new AvoidDangerBehavior());
+        if (behaviorConfig.enableAvoidDrowning) behaviorManager.register(new AvoidDrowningBehavior());
         if (behaviorConfig.enableNightShelter) behaviorManager.register(new NightShelterBehavior());
 
         // Register task behaviors (priority 2)

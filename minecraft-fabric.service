@@ -9,11 +9,13 @@ User=caavere
 Group=caavere
 WorkingDirectory=/home/caavere/Projects/minecraft
 
-# Start: create tmux session and run Fabric server
+# Start: kill any stale tmux session, then create a new one
+ExecStartPre=-/usr/bin/tmux kill-session -t minecraft
 ExecStart=/usr/bin/tmux new-session -d -s minecraft /home/caavere/Projects/minecraft/start-fabric.sh
 
-# Stop: send 'stop' command to console for graceful shutdown
+# Stop: send 'stop' command to console for graceful shutdown, then kill tmux session
 ExecStop=/usr/bin/tmux send-keys -t minecraft 'stop' Enter
+ExecStopPost=-/usr/bin/tmux kill-session -t minecraft
 
 # Timeout for graceful shutdown (world save can take time)
 TimeoutStopSec=60

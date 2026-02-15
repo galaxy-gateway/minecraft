@@ -7,4 +7,5 @@ public class BehaviorConfig {
     public boolean enableFleeHostile = true;
     public boolean enableNightShelter = true;
     public boolean enableAvoidDanger = true;
+    public boolean enableAvoidDrowning = true;
 }

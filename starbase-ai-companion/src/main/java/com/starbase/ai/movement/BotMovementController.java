@@ -17,7 +17,7 @@ public class BotMovementController {
     private static final double GRAVITY = 0.08;
     private static final double WATER_GRAVITY = 0.02;
     private static final double JUMP_VELOCITY = 0.42;
-    private static final double SWIM_UP_VELOCITY = 0.04;
+    private static final double SWIM_UP_VELOCITY = 0.12;
     private static final double WATER_SPEED_MULTIPLIER = 0.5;
     private static final double TERMINAL_VELOCITY = -3.0;
     private static final double WATER_TERMINAL_VELOCITY = -0.4;
@@ -204,6 +204,17 @@ public class BotMovementController {
 
         // Check waypoint arrival
         if (horizontalDist < 0.5) {
+            // In water, don't skip waypoints we haven't reached vertically
+            double yDiff = (waypoint.getY() + 0.5) - bot.getY();
+            if (bot.isTouchingWater() && Math.abs(yDiff) > 0.8) {
+                // At correct X/Z but wrong Y — swim vertically
+                applyVerticalMovement(bot, false, yDiff > 0);
+                bot.move(MovementType.SELF, new Vec3d(0, yVelocity, 0));
+                if (bot.isOnGround() && yVelocity < 0) yVelocity = 0;
+                bot.networkHandler.syncWithPlayerPosition();
+                bot.getServerWorld().getChunkManager().updatePosition(bot);
+                return;
+            }
             pathIndex++;
             walkingTicks++;
             if (pathIndex >= currentPath.size()) {

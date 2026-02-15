@@ -146,19 +146,21 @@ public class BotPathfinder {
 
                 if (neighborPos == null) continue;
 
-                // Skip dangerous blocks
-                if (MovementUtil.isDangerous(world, neighborPos)
-                        || MovementUtil.isDangerous(world, neighborPos.down())) {
-                    continue;
+                tryAddNeighbor(neighborPos, current, moveCost, to, allNodes, openSet, world);
+            }
+
+            // Vertical water movement: swim straight up/down
+            if (currentInWater) {
+                BlockPos swimUp = current.pos.up();
+                if (MovementUtil.isSwimmable(world, swimUp)
+                        || MovementUtil.isWalkableForPath(world, swimUp)) {
+                    tryAddNeighbor(swimUp, current, 1.5, to, allNodes, openSet, world);
                 }
 
-                double newG = current.gCost + moveCost;
-                Node existing = allNodes.get(neighborPos);
-                if (existing != null && newG >= existing.gCost) continue;
-
-                Node neighborNode = new Node(neighborPos, newG, newG + heuristic(neighborPos, to), current);
-                allNodes.put(neighborPos, neighborNode);
-                openSet.add(neighborNode);
+                BlockPos swimDown = current.pos.down();
+                if (MovementUtil.isSwimmable(world, swimDown)) {
+                    tryAddNeighbor(swimDown, current, 1.2, to, allNodes, openSet, world);
+                }
             }
         }
 
@@ -167,6 +169,23 @@ public class BotPathfinder {
             return reconstructPath(bestNode);
         }
         return List.of();
+    }
+
+    private void tryAddNeighbor(BlockPos neighborPos, Node current, double moveCost,
+                                BlockPos to, Map<BlockPos, Node> allNodes,
+                                PriorityQueue<Node> openSet, ServerWorld world) {
+        if (MovementUtil.isDangerous(world, neighborPos)
+                || MovementUtil.isDangerous(world, neighborPos.down())) {
+            return;
+        }
+
+        double newG = current.gCost + moveCost;
+        Node existing = allNodes.get(neighborPos);
+        if (existing != null && newG >= existing.gCost) return;
+
+        Node neighborNode = new Node(neighborPos, newG, newG + heuristic(neighborPos, to), current);
+        allNodes.put(neighborPos, neighborNode);
+        openSet.add(neighborNode);
     }
 
     private BlockPos findTraversable(ServerWorld world, BlockPos pos) {
