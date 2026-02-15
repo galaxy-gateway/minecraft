@@ -4,6 +4,9 @@ import com.starbase.ai.StarbaseAIMod;
 import com.starbase.ai.ai.GameContextCollector;
 import com.starbase.ai.ai.OpenAIClient;
 import com.starbase.ai.ai.PromptBuilder;
+import com.starbase.ai.behavior.Behavior;
+import com.starbase.ai.behavior.BotBehaviorManager;
+import com.starbase.ai.behavior.EnvironmentScanner;
 import com.starbase.ai.behavior.task.FollowPlayerBehavior;
 import com.starbase.ai.behavior.task.GatherResourceBehavior;
 import com.starbase.ai.bot.FakeBotPlayer;
@@ -69,7 +72,9 @@ public class ChatListener {
 
             // Gather context
             FakeBotPlayer bot = fakePlayerManager.getBotPlayer();
-            String gameContext = GameContextCollector.collect(sender, bot);
+            EnvironmentScanner.Snapshot env = bot != null ? bot.getEnvironmentSnapshot() : null;
+            String activity = getActivityDescription(bot);
+            String gameContext = GameContextCollector.collect(sender, bot, env, activity);
             PlayerMemory memory = memoryStore.getMemory(playerName);
 
             // Build prompt and call OpenAI
@@ -94,9 +99,9 @@ public class ChatListener {
         });
     }
 
-    // Matches: "collect 10 sand", "mine 5 stone", "gather oak log", "get some dirt"
+    // Matches: "collect 10 sand", "mine 5 stone", "gather oak log", "get some dirt", "grab 10 sand"
     private static final Pattern GATHER_PATTERN = Pattern.compile(
-            "(?:collect|gather|mine|get)\\s+(?:(\\d+)\\s+)?(.+)",
+            "(?:collect|gather|mine|get|grab|find|dig)\\s+(?:(\\d+)\\s+)?(.+)",
             Pattern.CASE_INSENSITIVE);
 
     private boolean handleCommand(String message, ServerPlayerEntity sender,
@@ -138,6 +143,26 @@ public class ChatListener {
         }
 
         return false;
+    }
+
+    private String getActivityDescription(FakeBotPlayer bot) {
+        if (bot == null) return "Offline";
+        BotBehaviorManager behaviorManager = bot.getBehaviorManager();
+        if (behaviorManager == null) return "Idle";
+        Behavior active = behaviorManager.getActiveBehavior();
+        if (active == null) return "Idle";
+
+        if (active instanceof FollowPlayerBehavior follow) {
+            ServerPlayerEntity target = follow.getTarget();
+            String name = target != null ? target.getName().getString() : "player";
+            return "Following " + name;
+        }
+        if (active instanceof GatherResourceBehavior gather) {
+            if (gather.isGathering()) {
+                return "Gathering resources";
+            }
+        }
+        return active.name();
     }
 
     private boolean handleGatherCommand(Matcher match, ServerPlayerEntity sender,

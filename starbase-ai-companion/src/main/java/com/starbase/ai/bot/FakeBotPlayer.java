@@ -52,6 +52,10 @@ public class FakeBotPlayer extends ServerPlayerEntity {
         return behaviorManager;
     }
 
+    public EnvironmentScanner.Snapshot getEnvironmentSnapshot() {
+        return environmentScanner != null ? environmentScanner.getSnapshot() : null;
+    }
+
     /**
      * Override travel() to prevent vanilla movement pipeline from conflicting
      * with our custom movement controller. When the bot is actively moving,
