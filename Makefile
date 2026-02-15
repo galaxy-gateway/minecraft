@@ -10,7 +10,8 @@
         backup backup-list restore logs console \
         install uninstall server-install server-uninstall fabric-server-install fabric-server-uninstall playit-install playit-uninstall \
         playit-download fabric-download fabric-install \
-        webadmin-build webadmin-start webadmin-stop webadmin-restart webadmin-status webadmin-logs webadmin-install webadmin-uninstall
+        webadmin-build webadmin-start webadmin-stop webadmin-restart webadmin-status webadmin-logs webadmin-install webadmin-uninstall \
+        mod-build mod-deploy mod-restart
 
 # Configuration
 TMUX_SESSION = minecraft
@@ -20,6 +21,10 @@ PLAYIT_SERVICE = playit
 WEBADMIN_SERVICE = minecraft-webadmin
 PLAYIT_BIN = /home/caavere/Projects/minecraft/playit
 WEBADMIN_DIR = /home/caavere/Projects/minecraft/web-admin
+
+# Custom mods
+AI_COMPANION_DIR = /home/caavere/Projects/minecraft/starbase-ai-companion
+AI_COMPANION_JAR = starbase-ai-companion-0.1.0.jar
 
 # Fabric configuration
 MC_VERSION = 1.21.1
@@ -83,6 +88,11 @@ help:
 	@echo "  playit-download      - Download playit.gg binary"
 	@echo "  fabric-download      - Download Fabric installer"
 	@echo "  fabric-install       - Install Fabric server (MC $(MC_VERSION))"
+	@echo ""
+	@echo "Custom Mods:"
+	@echo "  mod-build            - Build custom mods (AI companion)"
+	@echo "  mod-deploy           - Build and deploy custom mods to mods/"
+	@echo "  mod-restart          - Build, deploy, and restart server"
 	@echo ""
 	@echo "Web Admin:"
 	@echo "  webadmin-build       - Build web admin panel"
@@ -371,3 +381,20 @@ webadmin-uninstall:
 	@sudo rm -f /etc/systemd/system/$(WEBADMIN_SERVICE).service
 	@sudo systemctl daemon-reload
 	@echo "Web admin service removed."
+
+#===============================================================================
+# CUSTOM MODS
+#===============================================================================
+
+mod-build:
+	@echo "Building AI companion mod..."
+	@cd $(AI_COMPANION_DIR) && ./gradlew build
+	@echo "Build complete: $(AI_COMPANION_DIR)/build/libs/$(AI_COMPANION_JAR)"
+
+mod-deploy: mod-build
+	@echo "Deploying custom mods..."
+	@cp $(AI_COMPANION_DIR)/build/libs/$(AI_COMPANION_JAR) mods/
+	@echo "Deployed $(AI_COMPANION_JAR) to mods/"
+
+mod-restart: mod-deploy fabric-restart
+	@echo "Mods deployed and server restarted."
