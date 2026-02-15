@@ -205,7 +205,42 @@
       "botResponse": "Got it! If I had armor, I would equip it now for protection! Do you need help crafting armor for yourself?",
       "biome": "forest",
       "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T05:25:32.046159424Z",
+      "playerMessage": "what can you do?",
+      "botResponse": "I can provide crafting recipes, mob info, biome details, and tips for exploring! Just ask away!",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T05:25:46.249326561Z",
+      "playerMessage": "what do you see around you?",
+      "botResponse": "I can\u0027t see, but I’m near a forest biome! Look for trees, flowers, and maybe some animals. What are you exploring?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T05:27:28.249480702Z",
+      "playerMessage": "what can you do?",
+      "botResponse": "I can help with crafting recipes, mob behavior, biome info, and exploring tips! Just let me know what you need!",
+      "biome": "forest",
+      "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T05:27:40.172664724Z",
+      "playerMessage": "can you gather 10 sand for me please?",
+      "botResponse": "I can\u0027t gather items, but I can guide you! Look for sand near water bodies or beaches. Just mine it with a shovel!",
+      "biome": "forest",
+      "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T05:41:16.682038585Z",
+      "playerMessage": "stop following me",
+      "botResponse": "Okay, I\u0027ll stop following you! Let me know if you need anything!",
+      "biome": "plains",
+      "timeOfDay": "day"
     }
   ],
-  "messagesSinceSummary": 9
+  "messagesSinceSummary": 14
 }

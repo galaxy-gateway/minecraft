@@ -23,6 +23,15 @@ public class ModConfig {
             personalityConfig = loadOrCreate("personality.json", PersonalityConfig.class);
             behaviorConfig = loadOrCreate("behavior.json", BehaviorConfig.class);
 
+            // Migrate old default prompt to new capabilities-aware prompt
+            if (personalityConfig.systemPrompt != null
+                    && personalityConfig.systemPrompt.startsWith("You are ARIA, the AI companion")) {
+                PersonalityConfig fresh = new PersonalityConfig();
+                personalityConfig.systemPrompt = fresh.systemPrompt;
+                saveConfig("personality.json", personalityConfig);
+                StarbaseAIMod.LOGGER.info("Migrated personality.json system prompt to include capabilities");
+            }
+
             if (personalityConfig.openaiApiKey.isEmpty()) {
                 StarbaseAIMod.LOGGER.warn("OpenAI API key not set in config/starbase-ai/personality.json!");
             }
@@ -50,6 +59,15 @@ public class ModConfig {
             StarbaseAIMod.LOGGER.info("Created default config: {}", path);
             return defaults;
         }
+    }
+
+    public <T> void saveConfig(String filename, T config) throws IOException {
+        Path path = CONFIG_DIR.resolve(filename);
+        Files.writeString(path, GSON.toJson(config));
+    }
+
+    public void reload() {
+        load();
     }
 
     public BotConfig bot() { return botConfig; }

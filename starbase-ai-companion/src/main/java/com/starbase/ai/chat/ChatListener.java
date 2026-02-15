@@ -104,12 +104,22 @@ public class ChatListener {
             "(?:collect|gather|mine|get|grab|find|dig)\\s+(?:(\\d+)\\s+)?(.+)",
             Pattern.CASE_INSENSITIVE);
 
+    private static String stripNaturalLanguage(String message) {
+        return message
+                .replaceFirst("^(?:can you|could you|would you|please|pls|go)\\s+", "")
+                .replaceFirst("\\s+(?:for me|for us|please|pls|thanks|thx|now)\\??$", "")
+                .replaceFirst("[?.!]+$", "")
+                .trim();
+    }
+
     private boolean handleCommand(String message, ServerPlayerEntity sender,
                                   MinecraftServer server, String botName) {
         String lower = message.toLowerCase().trim();
+        String stripped = stripNaturalLanguage(lower);
 
         // Follow command
-        if (lower.equals("follow me") || lower.equals("come here") || lower.equals("come")) {
+        if (stripped.equals("follow me") || stripped.equals("come here")
+                || stripped.equals("come") || stripped.equals("come to me")) {
             FollowPlayerBehavior followBehavior = fakePlayerManager.getFollowBehavior();
             if (followBehavior != null) {
                 followBehavior.follow(sender);
@@ -120,9 +130,9 @@ public class ChatListener {
         }
 
         // Stop command (stops following OR gathering)
-        if (lower.equals("stop") || lower.equals("stay") || lower.equals("stay here")
-                || lower.equals("stop following") || lower.equals("stop gathering")
-                || lower.equals("stop mining") || lower.equals("stop collecting")) {
+        if (stripped.equals("stop") || stripped.equals("stay") || stripped.equals("stay here")
+                || stripped.equals("stop following") || stripped.equals("stop gathering")
+                || stripped.equals("stop mining") || stripped.equals("stop collecting")) {
             FollowPlayerBehavior followBehavior = fakePlayerManager.getFollowBehavior();
             if (followBehavior != null && followBehavior.isFollowing()) {
                 followBehavior.stopFollowing();
@@ -137,7 +147,7 @@ public class ChatListener {
         }
 
         // Gather/collect/mine command
-        Matcher gatherMatch = GATHER_PATTERN.matcher(lower);
+        Matcher gatherMatch = GATHER_PATTERN.matcher(stripped);
         if (gatherMatch.matches()) {
             return handleGatherCommand(gatherMatch, sender, server, botName);
         }

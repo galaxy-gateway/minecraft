@@ -4,6 +4,7 @@ import com.starbase.ai.ai.OpenAIClient;
 import com.starbase.ai.bot.FakePlayerManager;
 import com.starbase.ai.chat.ChatListener;
 import com.starbase.ai.chat.RateLimiter;
+import com.starbase.ai.command.ConfigCommand;
 import com.starbase.ai.config.ModConfig;
 import com.starbase.ai.config.PersonalityConfig;
 import com.starbase.ai.memory.MemoryStore;
@@ -23,6 +24,7 @@ public class StarbaseAIMod implements DedicatedServerModInitializer {
     public void onInitializeServer() {
         LOGGER.info("Starbase AI Companion loading...");
         CONFIG.load();
+        ConfigCommand.register();
 
         PersonalityConfig personality = CONFIG.personality();
 
