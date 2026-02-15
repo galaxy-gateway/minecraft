@@ -7,9 +7,12 @@ import java.util.*;
 
 public class BotPathfinder {
 
-    private static final int MAX_ITERATIONS = 1000;
-    private static final int[] DX = {1, -1, 0, 0};
-    private static final int[] DZ = {0, 0, 1, -1};
+    private static final int MAX_ITERATIONS = 4000;
+
+    // 8 directions: 4 cardinal + 4 diagonal
+    private static final int[] DX = {1, -1, 0, 0, 1, -1, 1, -1};
+    private static final int[] DZ = {0, 0, 1, -1, 1, 1, -1, -1};
+    private static final double[] BASE_COST = {1.0, 1.0, 1.0, 1.0, 1.414, 1.414, 1.414, 1.414};
 
     private final int maxRange;
 
@@ -18,9 +21,9 @@ public class BotPathfinder {
     }
 
     public List<BlockPos> findPath(ServerWorld world, BlockPos from, BlockPos to) {
-        // Snap start to walkable ground level
-        from = findGround(world, from);
-        to = findGround(world, to);
+        // Snap start to traversable ground level
+        from = findTraversable(world, from);
+        to = findTraversable(world, to);
         if (from == null || to == null) return List.of();
 
         // If target is too far, aim for a closer point along the direction
@@ -35,7 +38,7 @@ public class BotPathfinder {
                         to.getY(),
                         from.getZ() + (int) (dz * scale)
                 );
-                to = findGround(world, to);
+                to = findTraversable(world, to);
                 if (to == null) return List.of();
             }
         }
@@ -64,39 +67,80 @@ public class BotPathfinder {
                 bestNode = current;
             }
 
-            // Explore neighbors in 4 cardinal directions
-            for (int i = 0; i < 4; i++) {
+            boolean currentInWater = MovementUtil.isSwimmable(world, current.pos);
+
+            // Explore neighbors in 8 directions (4 cardinal + 4 diagonal)
+            for (int i = 0; i < 8; i++) {
                 int nx = current.pos.getX() + DX[i];
                 int nz = current.pos.getZ() + DZ[i];
                 int ny = current.pos.getY();
+                boolean isDiagonal = i >= 4;
 
-                BlockPos neighborPos = null;
-                double moveCost = 1.0;
-
-                // Try same level
-                BlockPos sameLevel = new BlockPos(nx, ny, nz);
-                if (MovementUtil.isWalkable(world, sameLevel)) {
-                    neighborPos = sameLevel;
-                }
-
-                // Try step up (1 block)
-                if (neighborPos == null) {
-                    BlockPos stepUp = new BlockPos(nx, ny + 1, nz);
-                    if (MovementUtil.isWalkable(world, stepUp)
-                            && MovementUtil.isPassable(world, current.pos.up().up())) {
-                        // Need head clearance above current pos to jump
-                        neighborPos = stepUp;
-                        moveCost = 1.5; // Penalize jumping
+                // For diagonal movement, check both adjacent cardinal blocks
+                // to prevent corner-cutting through walls
+                if (isDiagonal) {
+                    BlockPos adj1 = new BlockPos(current.pos.getX() + DX[i], ny, current.pos.getZ());
+                    BlockPos adj2 = new BlockPos(current.pos.getX(), ny, current.pos.getZ() + DZ[i]);
+                    if (!MovementUtil.isPathPassable(world, adj1) || !MovementUtil.isPathPassable(world, adj2)) {
+                        continue;
                     }
                 }
 
-                // Try step down (1 block)
-                if (neighborPos == null) {
+                BlockPos neighborPos = null;
+                double moveCost = BASE_COST[i];
+
+                // Try same level (walkable -- includes openable gates/doors)
+                BlockPos sameLevel = new BlockPos(nx, ny, nz);
+                if (MovementUtil.isWalkableForPath(world, sameLevel)) {
+                    neighborPos = sameLevel;
+                    // Add cost penalty if path goes through an openable block
+                    if (MovementUtil.isOpenable(world, sameLevel)) {
+                        moveCost += 0.5;
+                    }
+                }
+
+                // Try step up (1 block) -- only from land, only cardinal
+                if (neighborPos == null && !currentInWater && !isDiagonal) {
+                    BlockPos stepUp = new BlockPos(nx, ny + 1, nz);
+                    if (MovementUtil.isWalkableForPath(world, stepUp)
+                            && MovementUtil.isPathPassable(world, current.pos.up().up())) {
+                        neighborPos = stepUp;
+                        moveCost = 1.5;
+                    }
+                }
+
+                // Try step down (1 block) -- only cardinal
+                if (neighborPos == null && !isDiagonal) {
                     BlockPos stepDown = new BlockPos(nx, ny - 1, nz);
-                    if (MovementUtil.isWalkable(world, stepDown)
-                            && MovementUtil.isPassable(world, sameLevel)) {
+                    if (MovementUtil.isWalkableForPath(world, stepDown)
+                            && MovementUtil.isPathPassable(world, sameLevel)) {
                         neighborPos = stepDown;
-                        moveCost = 1.2; // Slight penalty for stepping down
+                        moveCost = 1.2;
+                    }
+                }
+
+                // Try swimming (same level water)
+                if (neighborPos == null && MovementUtil.isSwimmable(world, sameLevel)) {
+                    neighborPos = sameLevel;
+                    moveCost = BASE_COST[i] * 2.0;
+                }
+
+                // Try entering water (step down into water) -- only cardinal
+                if (neighborPos == null && !isDiagonal) {
+                    BlockPos waterDown = new BlockPos(nx, ny - 1, nz);
+                    if (MovementUtil.isSwimmable(world, waterDown)
+                            && MovementUtil.isPathPassable(world, sameLevel)) {
+                        neighborPos = waterDown;
+                        moveCost = 2.0;
+                    }
+                }
+
+                // Try exiting water (step up from water to land) -- only cardinal
+                if (neighborPos == null && currentInWater && !isDiagonal) {
+                    BlockPos stepUp = new BlockPos(nx, ny + 1, nz);
+                    if (MovementUtil.isWalkableForPath(world, stepUp)) {
+                        neighborPos = stepUp;
+                        moveCost = 1.5;
                     }
                 }
 
@@ -125,14 +169,13 @@ public class BotPathfinder {
         return List.of();
     }
 
-    private BlockPos findGround(ServerWorld world, BlockPos pos) {
-        // Search up and down a few blocks to find a walkable position
+    private BlockPos findTraversable(ServerWorld world, BlockPos pos) {
         for (int dy = 0; dy <= 5; dy++) {
             BlockPos up = pos.up(dy);
-            if (MovementUtil.isWalkable(world, up)) return up;
+            if (MovementUtil.isTraversableForPath(world, up)) return up;
             if (dy > 0) {
                 BlockPos down = pos.down(dy);
-                if (MovementUtil.isWalkable(world, down)) return down;
+                if (MovementUtil.isTraversableForPath(world, down)) return down;
             }
         }
         return null;
@@ -153,7 +196,6 @@ public class BotPathfinder {
             current = current.parent;
         }
         Collections.reverse(path);
-        // Remove the starting position (bot is already there)
         if (!path.isEmpty()) path.remove(0);
         return path;
     }

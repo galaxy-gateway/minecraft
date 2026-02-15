@@ -5,7 +5,6 @@ import com.starbase.ai.bot.FakeBotPlayer;
 import com.starbase.ai.config.BotConfig;
 import net.minecraft.entity.MovementType;
 import net.minecraft.network.packet.s2c.play.EntitySetHeadYawS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -14,6 +13,14 @@ import java.util.List;
 import java.util.Random;
 
 public class BotMovementController {
+
+    private static final double GRAVITY = 0.08;
+    private static final double WATER_GRAVITY = 0.02;
+    private static final double JUMP_VELOCITY = 0.42;
+    private static final double SWIM_UP_VELOCITY = 0.04;
+    private static final double WATER_SPEED_MULTIPLIER = 0.5;
+    private static final double TERMINAL_VELOCITY = -3.0;
+    private static final double WATER_TERMINAL_VELOCITY = -0.4;
 
     private final BotPathfinder pathfinder;
     private final BotConfig config;
@@ -26,14 +33,14 @@ public class BotMovementController {
     private BlockPos lastPathTarget;
     private int ticksSinceRepath;
 
+    // Vertical movement
+    private double yVelocity;
+
     // Humanization state
     private int pauseTicksRemaining;
     private int walkingTicks;
     private double angleDeviation;
     private int deviationChangeTicks;
-
-    // Jump state
-    private boolean jumpRequested;
 
     public BotMovementController(BotPathfinder pathfinder, BotConfig config) {
         this.pathfinder = pathfinder;
@@ -48,7 +55,7 @@ public class BotMovementController {
         this.ticksSinceRepath = 0;
         this.walkingTicks = 0;
         this.pauseTicksRemaining = 0;
-        this.jumpRequested = false;
+        this.yVelocity = 0;
     }
 
     public void clearGoal() {
@@ -57,7 +64,7 @@ public class BotMovementController {
         this.pathIndex = 0;
         this.walkingTicks = 0;
         this.pauseTicksRemaining = 0;
-        this.jumpRequested = false;
+        this.yVelocity = 0;
     }
 
     public boolean isMoving() {
@@ -73,17 +80,9 @@ public class BotMovementController {
     }
 
     /**
-     * Called before super.tick() to set up jump velocity.
-     */
-    public void preTick(FakeBotPlayer bot) {
-        if (jumpRequested && bot.isOnGround()) {
-            bot.setVelocity(bot.getVelocity().x, 0.42, bot.getVelocity().z);
-            jumpRequested = false;
-        }
-    }
-
-    /**
-     * Called after super.tick() to apply horizontal movement.
+     * Called after super.tick() to apply all bot movement (horizontal + vertical).
+     * FakeBotPlayer.travel() is overridden to skip vanilla movement when this controller
+     * is active, so we have full control here.
      */
     public void postTick(FakeBotPlayer bot) {
         if (currentGoal == null) return;
@@ -125,6 +124,8 @@ public class BotMovementController {
         // Handle pauses (humanization)
         if (pauseTicksRemaining > 0) {
             pauseTicksRemaining--;
+            // Still apply gravity/swimming while paused
+            applyVerticalMovement(bot, false, false);
             return;
         }
 
@@ -166,18 +167,10 @@ public class BotMovementController {
     }
 
     private boolean shouldRepath(BlockPos targetPos) {
-        // First path computation
         if (currentPath == null) return true;
-
-        // Path completed
         if (pathIndex >= currentPath.size()) return true;
-
-        // Periodic repath
         if (ticksSinceRepath >= config.pathRecalcTicks) return true;
-
-        // Target moved significantly
         if (lastPathTarget != null && lastPathTarget.getManhattanDistance(targetPos) > 3) return true;
-
         return false;
     }
 
@@ -202,6 +195,13 @@ public class BotMovementController {
         double dz = targetZ - bot.getZ();
         double horizontalDist = Math.sqrt(dx * dx + dz * dz);
 
+        // Try to open fence gates / doors when close to waypoint
+        if (horizontalDist < 1.5) {
+            ServerWorld world = bot.getServerWorld();
+            MovementUtil.tryOpen(world, waypoint);
+            MovementUtil.tryOpen(world, waypoint.up()); // upper half of doors
+        }
+
         // Check waypoint arrival
         if (horizontalDist < 0.5) {
             pathIndex++;
@@ -215,15 +215,22 @@ public class BotMovementController {
             return;
         }
 
-        // Check if we need to jump (next waypoint is higher)
-        if (waypoint.getY() > bot.getBlockY() && bot.isOnGround()) {
-            jumpRequested = true;
-        }
+        boolean inWater = bot.isTouchingWater();
+        boolean needsJump = waypoint.getY() > bot.getBlockY() && !inWater;
+        boolean needsSwimUp = waypoint.getY() >= bot.getBlockY() && inWater;
+
+        // Apply vertical movement (gravity, jumping, swimming)
+        applyVerticalMovement(bot, needsJump, needsSwimUp);
 
         // Calculate speed
         double distToGoal = getDistToGoalTarget(bot);
-        boolean shouldSprint = distToGoal > 10.0 && walkingTicks > 5;
+        boolean shouldSprint = distToGoal > 10.0 && walkingTicks > 5 && !inWater;
         double speed = shouldSprint ? config.sprintSpeed : config.walkSpeed;
+
+        // Slow down in water
+        if (inWater) {
+            speed *= WATER_SPEED_MULTIPLIER;
+        }
 
         // Deceleration near target (humanization)
         int remainingWaypoints = currentPath.size() - pathIndex;
@@ -239,8 +246,13 @@ public class BotMovementController {
         double moveX = Math.cos(angle) * speed;
         double moveZ = Math.sin(angle) * speed;
 
-        // Apply horizontal movement with collision
-        bot.move(MovementType.SELF, new Vec3d(moveX, 0, moveZ));
+        // Apply full 3D movement with collision detection
+        bot.move(MovementType.SELF, new Vec3d(moveX, yVelocity, moveZ));
+
+        // Reset y velocity if we landed
+        if (bot.isOnGround() && yVelocity < 0) {
+            yVelocity = 0;
+        }
 
         // Update facing direction
         float yaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
@@ -260,6 +272,32 @@ public class BotMovementController {
         bot.getServerWorld().getChunkManager().updatePosition(bot);
     }
 
+    private void applyVerticalMovement(FakeBotPlayer bot, boolean needsJump, boolean needsSwimUp) {
+        boolean inWater = bot.isTouchingWater();
+
+        if (inWater) {
+            // Swimming: gentle gravity and swim-up force
+            if (needsSwimUp) {
+                yVelocity = SWIM_UP_VELOCITY;
+            } else {
+                yVelocity -= WATER_GRAVITY;
+            }
+            yVelocity = Math.max(yVelocity, WATER_TERMINAL_VELOCITY);
+            // Water drag
+            yVelocity *= 0.8;
+        } else if (needsJump && bot.isOnGround()) {
+            // Jump from ground
+            yVelocity = JUMP_VELOCITY;
+        } else if (!bot.isOnGround()) {
+            // Airborne: apply gravity
+            yVelocity -= GRAVITY;
+            yVelocity = Math.max(yVelocity, TERMINAL_VELOCITY);
+        } else {
+            // On ground, not jumping
+            yVelocity = 0;
+        }
+    }
+
     private double getDistToGoalTarget(FakeBotPlayer bot) {
         if (currentPath == null || currentPath.isEmpty()) return 0;
         BlockPos lastWaypoint = currentPath.get(currentPath.size() - 1);
@@ -269,19 +307,16 @@ public class BotMovementController {
 
     private void onPathComplete() {
         walkingTicks = 0;
-        // For one-shot goals, clear them when path is done
         if (currentGoal instanceof MovementGoal.GoToPosition
                 || currentGoal instanceof MovementGoal.Flee) {
             clearGoal();
         }
-        // For Wander, the next tick will pick a new random target
-        // For FollowPlayer, repath will compute a new path if needed
     }
 
     private void updateAngleDeviation() {
         deviationChangeTicks--;
         if (deviationChangeTicks <= 0) {
-            angleDeviation = (random.nextDouble() * 6.0 - 3.0); // +/- 3 degrees
+            angleDeviation = (random.nextDouble() * 6.0 - 3.0);
             deviationChangeTicks = 20 + random.nextInt(40);
         }
     }

@@ -1,0 +1,8 @@
+{
+  "enableIdleWander": true,
+  "enableIdleLookAround": true,
+  "enableApproachPlayer": true,
+  "enableFleeHostile": true,
+  "enableNightShelter": true,
+  "enableAvoidDanger": true
+}

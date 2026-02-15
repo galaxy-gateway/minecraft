@@ -51,7 +51,49 @@
       "botResponse": "I\u0027m not alive like you, but I\u0027m here to assist and explore! What would you like to do?",
       "biome": "plains",
       "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T03:42:41.982485931Z",
+      "playerMessage": "follow me",
+      "botResponse": "I can\u0027t move, but I can guide you! Where would you like to go?",
+      "biome": "plains",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T03:43:50.643055498Z",
+      "playerMessage": "what should I do today?",
+      "botResponse": "How about exploring a cave for resources or building a new structure? Both are fun!",
+      "biome": "plains",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T03:48:57.689132526Z",
+      "playerMessage": "what can you do now?",
+      "botResponse": "I can provide tips, recipes, and info about mobs, biomes, and more! What do you need help with?",
+      "biome": "plains",
+      "timeOfDay": "night"
+    },
+    {
+      "timestamp": "2026-02-15T04:00:00.546201332Z",
+      "playerMessage": "grab 10 sand please",
+      "botResponse": "I can\u0027t collect items, but you can find sand near beaches or rivers. Just mine it with a shovel!",
+      "biome": "plains",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T04:16:16.377498143Z",
+      "playerMessage": "can you come to me?",
+      "botResponse": "I can\u0027t move, but I can guide you or help with any questions! What do you need?",
+      "biome": "forest",
+      "timeOfDay": "day"
+    },
+    {
+      "timestamp": "2026-02-15T04:17:37.200528881Z",
+      "playerMessage": "what do you see?",
+      "botResponse": "I can\u0027t see anything, but I can help you with your surroundings! Tell me what’s around you.",
+      "biome": "plains",
+      "timeOfDay": "day"
     }
   ],
-  "messagesSinceSummary": 7
+  "messagesSinceSummary": 13
 }

@@ -5,6 +5,7 @@ import com.starbase.ai.ai.GameContextCollector;
 import com.starbase.ai.ai.OpenAIClient;
 import com.starbase.ai.ai.PromptBuilder;
 import com.starbase.ai.behavior.task.FollowPlayerBehavior;
+import com.starbase.ai.behavior.task.GatherResourceBehavior;
 import com.starbase.ai.bot.FakeBotPlayer;
 import com.starbase.ai.bot.FakePlayerManager;
 import com.starbase.ai.config.PersonalityConfig;
@@ -12,12 +13,15 @@ import com.starbase.ai.memory.MemoryStore;
 import com.starbase.ai.memory.MemorySummarizer;
 import com.starbase.ai.memory.PlayerMemory;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.minecraft.block.Block;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.biome.Biome;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatListener {
     private final FakePlayerManager fakePlayerManager;
@@ -90,6 +94,11 @@ public class ChatListener {
         });
     }
 
+    // Matches: "collect 10 sand", "mine 5 stone", "gather oak log", "get some dirt"
+    private static final Pattern GATHER_PATTERN = Pattern.compile(
+            "(?:collect|gather|mine|get)\\s+(?:(\\d+)\\s+)?(.+)",
+            Pattern.CASE_INSENSITIVE);
+
     private boolean handleCommand(String message, ServerPlayerEntity sender,
                                   MinecraftServer server, String botName) {
         String lower = message.toLowerCase().trim();
@@ -105,18 +114,71 @@ public class ChatListener {
             return true;
         }
 
-        // Stop following command
+        // Stop command (stops following OR gathering)
         if (lower.equals("stop") || lower.equals("stay") || lower.equals("stay here")
-                || lower.equals("stop following")) {
+                || lower.equals("stop following") || lower.equals("stop gathering")
+                || lower.equals("stop mining") || lower.equals("stop collecting")) {
             FollowPlayerBehavior followBehavior = fakePlayerManager.getFollowBehavior();
             if (followBehavior != null && followBehavior.isFollowing()) {
                 followBehavior.stopFollowing();
-                server.execute(() -> ChatResponder.sendBotMessage(
-                        server, botName, "Alright, I'll stay here."));
             }
+            GatherResourceBehavior gatherBehavior = fakePlayerManager.getGatherBehavior();
+            if (gatherBehavior != null && gatherBehavior.isGathering()) {
+                gatherBehavior.stopGathering();
+            }
+            server.execute(() -> ChatResponder.sendBotMessage(
+                    server, botName, "Alright, I'll stop."));
             return true;
         }
 
+        // Gather/collect/mine command
+        Matcher gatherMatch = GATHER_PATTERN.matcher(lower);
+        if (gatherMatch.matches()) {
+            return handleGatherCommand(gatherMatch, sender, server, botName);
+        }
+
         return false;
+    }
+
+    private boolean handleGatherCommand(Matcher match, ServerPlayerEntity sender,
+                                        MinecraftServer server, String botName) {
+        String countStr = match.group(1);
+        String blockName = match.group(2).trim();
+
+        // Strip trailing "s" for plural (e.g. "sands" -> "sand")
+        if (blockName.endsWith("s") && !blockName.endsWith("ss")
+                && !blockName.endsWith("grass") && !blockName.endsWith("glass")) {
+            blockName = blockName.substring(0, blockName.length() - 1);
+        }
+
+        // Strip "some" / "a few" prefixes
+        blockName = blockName.replaceFirst("^(?:some|a few|a bunch of)\\s+", "");
+
+        int count = countStr != null ? Integer.parseInt(countStr) : 10;
+        count = Math.max(1, Math.min(64, count)); // Clamp 1-64
+
+        Block block = GatherResourceBehavior.resolveBlockName(blockName);
+        if (block == null) {
+            String finalBlockName = blockName;
+            server.execute(() -> ChatResponder.sendBotMessage(
+                    server, botName, "I don't know what '" + finalBlockName + "' is."));
+            return true;
+        }
+
+        GatherResourceBehavior gatherBehavior = fakePlayerManager.getGatherBehavior();
+        if (gatherBehavior == null) {
+            server.execute(() -> ChatResponder.sendBotMessage(
+                    server, botName, "I can't do that right now."));
+            return true;
+        }
+
+        String playerName = sender.getName().getString();
+        gatherBehavior.gather(block, count, playerName);
+
+        int finalCount = count;
+        String displayName = blockName.replace("_", " ");
+        server.execute(() -> ChatResponder.sendBotMessage(
+                server, botName, "Sure! I'll collect " + finalCount + " " + displayName + "."));
+        return true;
     }
 }

@@ -13,6 +13,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Uuids;
+import net.minecraft.util.math.Vec3d;
 
 public class FakeBotPlayer extends ServerPlayerEntity {
 
@@ -51,22 +52,32 @@ public class FakeBotPlayer extends ServerPlayerEntity {
         return behaviorManager;
     }
 
+    /**
+     * Override travel() to prevent vanilla movement pipeline from conflicting
+     * with our custom movement controller. When the bot is actively moving,
+     * we skip vanilla travel() entirely and handle all movement in postTick().
+     * When idle, vanilla travel() runs normally (handles gravity, etc.)
+     */
+    @Override
+    public void travel(Vec3d movementInput) {
+        if (movementController != null && movementController.isMoving()) {
+            // Skip vanilla movement -- our controller handles everything
+            return;
+        }
+        super.travel(movementInput);
+    }
+
     @Override
     public void tick() {
-        // 1. Pre-tick movement (set up jumps before vanilla processes physics)
-        if (movementController != null) {
-            movementController.preTick(this);
-        }
-
-        // 2. Vanilla tick (gravity, damage, status effects, etc.)
+        // 1. Vanilla tick (gravity when idle, damage, status effects, etc.)
         super.tick();
 
-        // 3. Environment scan (every 20 ticks)
+        // 2. Environment scan (every 20 ticks)
         if (environmentScanner != null) {
             environmentScanner.maybeScan(this);
         }
 
-        // 4. Behavior tick (priority-based behavior selection)
+        // 3. Behavior tick (priority-based behavior selection)
         if (behaviorManager != null && environmentScanner != null) {
             EnvironmentScanner.Snapshot snapshot = environmentScanner.getSnapshot();
             if (snapshot != null) {
@@ -75,12 +86,12 @@ public class FakeBotPlayer extends ServerPlayerEntity {
             }
         }
 
-        // 5. Movement tick (apply horizontal movement after vanilla physics)
+        // 4. Movement tick (apply horizontal + vertical movement)
         if (movementController != null) {
             movementController.postTick(this);
         }
 
-        // 6. Spontaneous chat
+        // 5. Spontaneous chat
         if (spontaneousChat != null && environmentScanner != null) {
             EnvironmentScanner.Snapshot snapshot = environmentScanner.getSnapshot();
             if (snapshot != null) {
@@ -88,10 +99,10 @@ public class FakeBotPlayer extends ServerPlayerEntity {
             }
         }
 
-        // 7. Look management (context-dependent)
+        // 6. Look management (context-dependent)
         updateLook();
 
-        // 8. Position sync
+        // 7. Position sync
         syncPosition();
     }
 

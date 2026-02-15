@@ -11,6 +11,7 @@ import com.starbase.ai.behavior.survival.AvoidDangerBehavior;
 import com.starbase.ai.behavior.survival.FleeHostileBehavior;
 import com.starbase.ai.behavior.survival.NightShelterBehavior;
 import com.starbase.ai.behavior.task.FollowPlayerBehavior;
+import com.starbase.ai.behavior.task.GatherResourceBehavior;
 import com.starbase.ai.chat.SpontaneousChat;
 import com.starbase.ai.config.BehaviorConfig;
 import com.starbase.ai.config.BotConfig;
@@ -28,6 +29,7 @@ public class FakePlayerManager {
     private final OpenAIClient openAIClient;
     private FakeBotPlayer botPlayer;
     private FollowPlayerBehavior followBehavior;
+    private GatherResourceBehavior gatherBehavior;
     private int respawnTickCounter = -1;
 
     public FakePlayerManager(OpenAIClient openAIClient) {
@@ -72,6 +74,9 @@ public class FakePlayerManager {
         followBehavior = new FollowPlayerBehavior();
         behaviorManager.register(followBehavior);
 
+        gatherBehavior = new GatherResourceBehavior();
+        behaviorManager.register(gatherBehavior);
+
         // Register social behaviors (priority 3)
         if (behaviorConfig.enableApproachPlayer) behaviorManager.register(new ApproachPlayerBehavior());
 
@@ -97,6 +102,7 @@ public class FakePlayerManager {
             botPlayer.networkHandler.disconnect(Text.literal("Server stopping"));
             botPlayer = null;
             followBehavior = null;
+            gatherBehavior = null;
             respawnTickCounter = -1;
             StarbaseAIMod.LOGGER.info("Despawned bot player");
         }
@@ -124,6 +130,7 @@ public class FakePlayerManager {
         botPlayer.networkHandler.disconnect(Text.literal("Respawning"));
         botPlayer = null;
         followBehavior = null;
+        gatherBehavior = null;
         respawnTickCounter = -1;
         spawn(server);
     }
@@ -134,5 +141,9 @@ public class FakePlayerManager {
 
     public FollowPlayerBehavior getFollowBehavior() {
         return followBehavior;
+    }
+
+    public GatherResourceBehavior getGatherBehavior() {
+        return gatherBehavior;
     }
 }
