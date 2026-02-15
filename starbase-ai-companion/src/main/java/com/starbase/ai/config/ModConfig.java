@@ -14,12 +14,14 @@ public class ModConfig {
 
     private BotConfig botConfig;
     private PersonalityConfig personalityConfig;
+    private BehaviorConfig behaviorConfig;
 
     public void load() {
         try {
             Files.createDirectories(CONFIG_DIR);
             botConfig = loadOrCreate("bot.json", BotConfig.class);
             personalityConfig = loadOrCreate("personality.json", PersonalityConfig.class);
+            behaviorConfig = loadOrCreate("behavior.json", BehaviorConfig.class);
 
             if (personalityConfig.openaiApiKey.isEmpty()) {
                 StarbaseAIMod.LOGGER.warn("OpenAI API key not set in config/starbase-ai/personality.json!");
@@ -28,6 +30,7 @@ public class ModConfig {
             StarbaseAIMod.LOGGER.error("Failed to load config", e);
             botConfig = new BotConfig();
             personalityConfig = new PersonalityConfig();
+            behaviorConfig = new BehaviorConfig();
         }
     }
 
@@ -51,5 +54,6 @@ public class ModConfig {
 
     public BotConfig bot() { return botConfig; }
     public PersonalityConfig personality() { return personalityConfig; }
+    public BehaviorConfig behavior() { return behaviorConfig; }
     public Path configDir() { return CONFIG_DIR; }
 }

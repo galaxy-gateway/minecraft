@@ -4,6 +4,7 @@ import com.starbase.ai.StarbaseAIMod;
 import com.starbase.ai.ai.GameContextCollector;
 import com.starbase.ai.ai.OpenAIClient;
 import com.starbase.ai.ai.PromptBuilder;
+import com.starbase.ai.behavior.task.FollowPlayerBehavior;
 import com.starbase.ai.bot.FakeBotPlayer;
 import com.starbase.ai.bot.FakePlayerManager;
 import com.starbase.ai.config.PersonalityConfig;
@@ -50,6 +51,11 @@ public class ChatListener {
             MinecraftServer server = sender.getServer();
             PersonalityConfig personality = StarbaseAIMod.CONFIG.personality();
 
+            // Handle simple commands before AI processing
+            if (handleCommand(playerMessage, sender, server, botName)) {
+                return;
+            }
+
             // Rate limit check
             if (!rateLimiter.isAllowed(playerName)) {
                 server.execute(() -> ChatResponder.sendBotMessage(
@@ -82,5 +88,35 @@ public class ChatListener {
                         memorySummarizer.summarizeIfNeeded(playerName);
                     }));
         });
+    }
+
+    private boolean handleCommand(String message, ServerPlayerEntity sender,
+                                  MinecraftServer server, String botName) {
+        String lower = message.toLowerCase().trim();
+
+        // Follow command
+        if (lower.equals("follow me") || lower.equals("come here") || lower.equals("come")) {
+            FollowPlayerBehavior followBehavior = fakePlayerManager.getFollowBehavior();
+            if (followBehavior != null) {
+                followBehavior.follow(sender);
+                server.execute(() -> ChatResponder.sendBotMessage(
+                        server, botName, "On my way, " + sender.getName().getString() + "!"));
+            }
+            return true;
+        }
+
+        // Stop following command
+        if (lower.equals("stop") || lower.equals("stay") || lower.equals("stay here")
+                || lower.equals("stop following")) {
+            FollowPlayerBehavior followBehavior = fakePlayerManager.getFollowBehavior();
+            if (followBehavior != null && followBehavior.isFollowing()) {
+                followBehavior.stopFollowing();
+                server.execute(() -> ChatResponder.sendBotMessage(
+                        server, botName, "Alright, I'll stay here."));
+            }
+            return true;
+        }
+
+        return false;
     }
 }

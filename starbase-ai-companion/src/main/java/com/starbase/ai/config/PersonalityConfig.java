@@ -9,4 +9,9 @@ public class PersonalityConfig {
     public int requestTimeoutSeconds = 10;
     public int rateLimitCooldownSeconds = 3;
     public String fallbackMessage = "Sorry, my thoughts are a bit fuzzy right now. Try again?";
+
+    // Spontaneous chat
+    public int spontaneousChatMinSeconds = 120;
+    public int spontaneousChatMaxSeconds = 300;
+    public boolean spontaneousChatEnabled = true;
 }

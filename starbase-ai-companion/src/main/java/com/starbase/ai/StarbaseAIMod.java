@@ -31,13 +31,14 @@ public class StarbaseAIMod implements DedicatedServerModInitializer {
             LOGGER.error("Set your key in config/starbase-ai/personality.json");
         }
 
-        FakePlayerManager fakePlayerManager = new FakePlayerManager();
-        MemoryStore memoryStore = new MemoryStore(CONFIG.configDir());
         OpenAIClient openAIClient = new OpenAIClient(
                 personality.openaiApiKey,
                 personality.openaiModel,
                 personality.temperature,
                 personality.requestTimeoutSeconds);
+
+        FakePlayerManager fakePlayerManager = new FakePlayerManager(openAIClient);
+        MemoryStore memoryStore = new MemoryStore(CONFIG.configDir());
         RateLimiter rateLimiter = new RateLimiter(personality.rateLimitCooldownSeconds);
         MemorySummarizer memorySummarizer = new MemorySummarizer(openAIClient, memoryStore);
 

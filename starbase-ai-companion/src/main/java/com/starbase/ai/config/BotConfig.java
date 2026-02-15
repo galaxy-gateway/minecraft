@@ -7,4 +7,11 @@ public class BotConfig {
     public double spawnZ = 0;
     public boolean lookAtNearestPlayer = true;
     public int respawnDelayTicks = 60; // 3 seconds at 20 TPS
+
+    // Movement
+    public double walkSpeed = 0.2;
+    public double sprintSpeed = 0.26;
+    public double followDistance = 3.0;
+    public int pathRecalcTicks = 20;
+    public int pathMaxRange = 64;
 }
