@@ -177,3 +177,7 @@ The playit tunnel starts automatically with the Minecraft server.
 ### Mod conflicts
 - Remove mods one at a time to identify conflicts
 - Check mod documentation for known incompatibilities
+
+## License
+
+[MIT](LICENSE)
