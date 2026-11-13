@@ -2,6 +2,7 @@
 name = "minecraft-web-admin"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "Web-based admin panel for Minecraft server management"
 
 [dependencies]
